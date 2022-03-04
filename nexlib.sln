@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nexlib", "nexlib.csproj", "{09353F7B-F08B-4326-9EE3-CBC4D6619CE5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7D231FBB-BE87-43EB-B43C-7C73D19CA07F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D231FBB-BE87-43EB-B43C-7C73D19CA07F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D231FBB-BE87-43EB-B43C-7C73D19CA07F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D231FBB-BE87-43EB-B43C-7C73D19CA07F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09353F7B-F08B-4326-9EE3-CBC4D6619CE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09353F7B-F08B-4326-9EE3-CBC4D6619CE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09353F7B-F08B-4326-9EE3-CBC4D6619CE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09353F7B-F08B-4326-9EE3-CBC4D6619CE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF496650-D024-4EE9-A945-CE7B2E8F11BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF496650-D024-4EE9-A945-CE7B2E8F11BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF496650-D024-4EE9-A945-CE7B2E8F11BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF496650-D024-4EE9-A945-CE7B2E8F11BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38E04110-03E0-4823-A0C2-0E28F03493CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38E04110-03E0-4823-A0C2-0E28F03493CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38E04110-03E0-4823-A0C2-0E28F03493CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38E04110-03E0-4823-A0C2-0E28F03493CC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
