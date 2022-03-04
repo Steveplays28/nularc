@@ -47,7 +47,7 @@ A: You can use this in any project that uses C#. The logger only supports Godot,
 
 If you've found a problem or want to make a suggestions, feel free to [open an issue](https://github.com/Steveplays28/nexlib/issues/new)!
 
-Please check if there isn't already an issue open for what you want to report.
+Please check if there isn't already an issue open for your problem/suggestion.
 
 I will respond as soon as I can.
 
@@ -56,7 +56,7 @@ I will respond as soon as I can.
 
 If you want to add or change something, feel free to [make a pull request](https://github.com/Steveplays28/nexlib/compare)!
 
-Please check if there isn't already a pull request open for this specific issue, and adhere to the rules listed in each of the folders' READMEs. 
+Please check if there isn't already a pull request open for this specific issue.
 
 I will respond as soon as I can.
 
