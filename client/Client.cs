@@ -26,7 +26,7 @@ namespace NExLib
 		private static readonly LogHelper _logHelper = new("[Client]: ");
 		#endregion
 
-		public static void InitializeClient()
+		public static void Initialize()
 		{
 			if (udpState.hasInitialized)
 			{
@@ -61,7 +61,7 @@ namespace NExLib
 			}
 		}
 
-		public static void CloseUdpClient()
+		public static void Close()
 		{
 			try
 			{
@@ -147,7 +147,7 @@ namespace NExLib
 				// Construct new Packet object from the received packet
 				using (Packet constructedPacket = new(packetData))
 				{
-					PacketCallbacksClient.packetCallbacks[constructedPacket.connectedFunction].Invoke(constructedPacket);
+					PacketCallbacksClient.PacketCallbacks[constructedPacket.connectedFunction].Invoke(constructedPacket);
 				}
 			}
 			catch (Exception e)

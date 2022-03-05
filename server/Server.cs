@@ -8,9 +8,6 @@ namespace NExLib
 	public static class Server
 	{
 		#region Varbiables
-		public static readonly string defaultIp = "127.0.0.1";
-		public static readonly int defaultPort = 24464;
-
 		public struct UdpState
 		{
 			public IPEndPoint serverEndPoint;
@@ -31,9 +28,9 @@ namespace NExLib
 		private static readonly LogHelper _logHelper = new("[Server]: ");
 		#endregion
 
-		public static void StartServer()
+		public static void Start(int port)
 		{
-			udpState.serverEndPoint = new IPEndPoint(IPAddress.Parse(defaultIp), defaultPort);
+			udpState.serverEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port);
 			udpState.udpClient = new UdpClient(udpState.serverEndPoint);
 			udpState.packetCount = 0;
 
@@ -109,7 +106,7 @@ namespace NExLib
 				// Construct new Packet object from the received packet
 				using (Packet constructedPacket = new(packetData))
 				{
-					PacketCallbacksServer.packetCallbacks[constructedPacket.connectedFunction].Invoke(constructedPacket);
+					PacketCallbacksServer.PacketCallbacks[constructedPacket.connectedFunction].Invoke(constructedPacket);
 				}
 
 				Thread.Sleep(17);
@@ -144,7 +141,7 @@ namespace NExLib
 		}
 		#endregion
 
-		public static void CloseUdpClient()
+		public static void Stop()
 		{
 			try
 			{
