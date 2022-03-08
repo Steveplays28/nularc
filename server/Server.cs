@@ -7,7 +7,7 @@ namespace NExLib
 {
 	public static class Server
 	{
-		#region Varbiables
+		#region Variables
 		public struct UdpState
 		{
 			public IPEndPoint serverEndPoint;
@@ -114,7 +114,6 @@ namespace NExLib
 		}
 		#endregion
 
-		#region Packet callback functions
 		public static void OnConnect(Packet packet, IPEndPoint ipEndPoint)
 		{
 			// Accept the client's connection request
@@ -139,7 +138,6 @@ namespace NExLib
 
 			_logHelper.LogInfo($"New client connected from {ipEndPoint}.");
 		}
-		#endregion
 
 		public static void Stop()
 		{

@@ -23,7 +23,7 @@ Lightweight C# UDP networking library that supports Godot, Unity, and .NET.
 1. Make 2 new projects, one for the server, and one for the client.
 2. Download the server, client, and shared files from the [latest release](https://github.com/Steveplays28/nexlib/releases/latest).
 3. Extract the zip files, and put the folders in your project directory.
-4. You can now make a script and call the library's functions by importing it: `using NExLib;`.
+4. You can now call the library's functions (`Server`, `Client`) by importing it: `using NExLib;`.
 
 ### Usage
 
@@ -38,8 +38,24 @@ public class ServerController : Node
 	// The ready function that gets called when the game/app starts, will be different per engine
 	public override void _Ready()
 	{
+		// Subscribe to events
+		PacketCallbacksServer.OnConnected += OnConnected;
+		PacketCallbacksServer.OnDisconnected += OnDisconnected;
+
 		// Start the server on 127.0.0.1:24465
 		Server.Start(24465);
+	}
+
+	// Gets invoked after the client has connected to a server
+	private void OnConnected()
+	{
+		// Your code here
+	}
+
+	// Gets invoked after the client has disconnected from a server
+	private void OnDisconnected()
+	{
+		// Your code here
 	}
 }
 ```
@@ -93,12 +109,66 @@ public class ClientController : Node
 	// The ready function that gets called when the game/app starts, will be different per engine
 	public override void _Ready()
 	{
+		// Subscribe to events
+		PacketCallbacksClient.OnConnected += OnConnected;
+		PacketCallbacksClient.OnDisconnected += OnDisconnected;
+
 		// Initialize the client
 		Client.Initialize();
 
 		// Connect to the server on 127.0.0.1:24465
 		Client.Connect("12.0.0.1", 24465)
 	}
+
+	// Gets invoked after the client has connected to a server
+	private void OnConnected()
+	{
+		// Your code here
+	}
+
+	// Gets invoked after the client has disconnected from a server
+	private void OnDisconnected()
+	{
+		// Your code here
+	}
+}
+```
+
+PacketCallbacksClient.cs
+```cs
+using System.Collections.Generic;
+using NExLib;
+
+public static class PacketCallbacksClient
+{
+	public static Dictionary<int, Action<Packet>> PacketCallbacks = new Dictionary<int, Action<Packet>>()
+	{
+		{ 0, OnConnectedInvoker },
+		{ 1, OnDisconnectedInvoker }
+	};
+
+	#region OnConnected
+	public delegate void ConnectedDelegate(int clientId, string messageOfTheDay);
+	public static event ConnectedDelegate OnConnected;
+
+	private static void OnConnectedInvoker(Packet packet)
+	{
+		int clientId = packet.ReadInt32();
+		string messageOfTheDay = packet.ReadString();
+
+		OnConnected.Invoke(clientId, messageOfTheDay);
+	}
+	#endregion
+
+	#region OnDisconnected
+	public delegate void DisconnectedDelegate();
+	public static event DisconnectedDelegate OnDisconnected;
+
+	private static void OnDisconnectedInvoker(Packet packet)
+	{
+		OnDisconnected.Invoke();
+	}
+	#endregion
 }
 ```
 
