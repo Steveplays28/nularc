@@ -87,7 +87,9 @@ namespace NExLib
 			udpState.serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
 
 			// Send connect packet
+#pragma warning disable
 			using (Packet packet = new(0, 0))
+#pragma warning restore
 			{
 				SendPacket(packet);
 				_logHelper.LogInfo("Sent connect packet to the server.");
@@ -106,7 +108,9 @@ namespace NExLib
 			udpState.serverEndPoint = new IPEndPoint(IPAddress.Parse(defaultIp), defaultPort);
 
 			// Send disconnect packet
+#pragma warning disable
 			using (Packet packet = new(0, 0))
+#pragma warning restore
 			{
 				SendPacket(packet);
 				_logHelper.LogInfo("Sent disconnect packet to the server.");
@@ -145,9 +149,11 @@ namespace NExLib
 				// _logHelper.LogInfo($"Received bytes: {string.Join(", ", packetData)}");
 
 				// Construct new Packet object from the received packet
+#pragma warning disable
 				using (Packet constructedPacket = new(packetData))
+#pragma warning restore
 				{
-					PacketCallbacksClient.PacketCallbacks[constructedPacket.connectedFunction].Invoke(constructedPacket);
+					PacketHandlersClient.PacketHandlers[constructedPacket.connectedFunction].Invoke(constructedPacket);
 				}
 			}
 			catch (Exception e)

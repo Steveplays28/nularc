@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -26,10 +27,17 @@ namespace NExLib
 		public static UdpState udpState = new();
 
 		private static readonly LogHelper _logHelper = new("[Server]: ");
+		private static Thread? _udpReceiveThread;
 		#endregion
 
 		public static void Start(int port)
 		{
+			if (Type.GetType("PacketCallbacksServer") == null)
+			{
+				_logHelper.LogError("No PacketCallbacksServer class is defined, see the documentation (https://github.com/Steveplays28/nexlib).");
+				return;
+			}
+
 			udpState.serverEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port);
 			udpState.udpClient = new UdpClient(udpState.serverEndPoint);
 			udpState.packetCount = 0;
@@ -40,12 +48,12 @@ namespace NExLib
 			udpState.savedClientsIdToIp = new Dictionary<int, IPEndPoint>();
 
 			// Create and start a UDP receive thread for Server.ReceivePacket(), so it doesn't block Godot's main thread
-			Thread udpReceiveThread = new(new ThreadStart(ReceivePacket))
+			_udpReceiveThread = new(new ThreadStart(ReceivePacket))
 			{
 				Name = "UDP receive thread",
 				IsBackground = true
 			};
-			udpReceiveThread.Start();
+			_udpReceiveThread.Start();
 			// TODO: Server start try catch block
 
 			_logHelper.LogInfo($"Server started on {udpState.serverEndPoint}.");
@@ -106,7 +114,7 @@ namespace NExLib
 				// Construct new Packet object from the received packet
 				using (Packet constructedPacket = new(packetData))
 				{
-					PacketCallbacksServer.PacketCallbacks[constructedPacket.connectedFunction].Invoke(constructedPacket);
+					PacketHandlersServer.PacketHandlers[constructedPacket.connectedFunction].Invoke(constructedPacket);
 				}
 
 				Thread.Sleep(17);
