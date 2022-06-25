@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace NExLib
+namespace NExLib.Common
 {
 	/// <summary>
 	/// Writeable/readable packet, dispose using <c>Dispose()</c> when the packet is no longer in use.
