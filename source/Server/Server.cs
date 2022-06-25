@@ -16,36 +16,46 @@ namespace NExLib.Server
 		public Dictionary<IPEndPoint, int> SavedClientsIpToId = new();
 		public Dictionary<int, IPEndPoint> SavedClientsIdToIp = new();
 
-		public delegate void PacketCallback(Packet packet);
+		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
 		public event PacketCallback? PacketReceived;
+
+		public readonly int TicksPerSecond;
 
 		private int packetCount = 0;
 		private readonly LogHelper logHelper;
 		private readonly IPEndPoint serverEndPoint;
 
-		public Server(int port)
+		public Server(int port, int ticksPerSecond)
 		{
 			serverEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port);
 			UdpClient = new UdpClient(serverEndPoint);
+			TicksPerSecond = ticksPerSecond;
 
 			logHelper = new LogHelper("[NExLib (Server)]: ");
 		}
 
 		public void Start()
 		{
-			// Create and start a UDP receive thread for Server.ReceivePacket(), so it doesn't block Godot's main thread
-			// Thread udpReceiveThread = new(new ThreadStart(ReceivePacket))
-			// {
-			// 	Name = "UDP receive thread",
-			// 	IsBackground = true
-			// };
-			// udpReceiveThread.Start();
-			// TODO: Server start try catch block
-
 			AutoResetEvent autoResetEvent = new(false);
-			Timer udpReceiveTimer = new(ReceivePacket, autoResetEvent, 1000, 250);
+			int timerPeriod = Math.Round(1 / TicksPerSecond);
+			Timer udpReceiveTimer = new(Task.Run(ReceivePacket), autoResetEvent, 0, timerPeriod);
+
+			PacketReceived += OnConnect;
 
 			logHelper.LogMessage(LogHelper.Loglevel.Info, $"Server started on {serverEndPoint}.");
+		}
+
+		public void Stop()
+		{
+			try
+			{
+				UdpClient.Close();
+				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Successfully closed the UdpClient!");
+			}
+			catch (SocketException e)
+			{
+				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Failed closing the UdpClient: {e}");
+			}
 		}
 
 		/// <summary>
@@ -89,30 +99,12 @@ namespace NExLib.Server
 			}
 		}
 
-		public void ReceivePacket(object? state)
-		{
-			while (true)
-			{
-				// Extract data from the received packet
-				IPEndPoint remoteEndPoint = new(IPAddress.Any, 0);
-				byte[] packetData = UdpClient.Receive(ref remoteEndPoint);
-
-				// Construct new Packet object from the received packet
-				using (Packet constructedPacket = new(packetData))
-				{
-					PacketReceived?.Invoke(constructedPacket);
-				}
-
-				Thread.Sleep(17);
-			}
-		}
-
-		public void OnConnect(Packet packet, IPEndPoint ipEndPoint)
+		public void OnConnect(Packet packet, IPEndPoint clientIPEndPoint)
 		{
 			// Accept the client's connection request
-			int createdClientId = ConnectedClientsIdToIp.Count;
-			ConnectedClientsIdToIp.Add(createdClientId, ipEndPoint);
-			ConnectedClientsIpToId.Add(ipEndPoint, createdClientId);
+			int clientId = ConnectedClientsIdToIp.Count;
+			ConnectedClientsIdToIp.Add(clientId, clientIPEndPoint);
+			ConnectedClientsIpToId.Add(clientIPEndPoint, clientId);
 			// TODO: Check if client isn't already connected
 
 			string messageOfTheDay = "Hello, this is the message of the day! :)";
@@ -121,27 +113,27 @@ namespace NExLib.Server
 			using (Packet newPacket = new(0, 0))
 			{
 				// Write the client ID to the packet
-				newPacket.WriteData(createdClientId);
+				newPacket.WriteData(clientId);
 
 				// Write the message of the day to the packet
 				newPacket.WriteData(messageOfTheDay);
 
-				SendPacketTo(newPacket, ConnectedClientsIpToId[ipEndPoint]);
+				SendPacketTo(newPacket, ConnectedClientsIpToId[clientId]);
 			}
 
-			logHelper.LogMessage(LogHelper.Loglevel.Info, $"New client connected from {ipEndPoint}.");
+			logHelper.LogMessage(LogHelper.Loglevel.Info, $"New client connected from {clientIPEndPoint}.");
 		}
 
-		public void Stop()
+		private void ReceivePacket(object? state)
 		{
-			try
+			// Extract data from the received packet
+			IPEndPoint remoteEndPoint = new(IPAddress.Any, 0);
+			byte[] packetData = UdpClient.Receive(ref remoteEndPoint);
+
+			// Construct new Packet object from the received packet
+			using (Packet constructedPacket = new(packetData))
 			{
-				UdpClient.Close();
-				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Successfully closed the UdpClient!");
-			}
-			catch (SocketException e)
-			{
-				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Failed closing the UdpClient: {e}");
+				PacketReceived?.Invoke(constructedPacket);
 			}
 		}
 	}
