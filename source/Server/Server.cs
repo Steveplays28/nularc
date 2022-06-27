@@ -77,6 +77,7 @@ namespace NExLib.Server
 				UdpClient.Send(packetData, packetData.Length, connectedClient);
 			}
 		}
+
 		/// <summary>
 		/// Sends a packet to a client.
 		/// </summary>
@@ -98,7 +99,22 @@ namespace NExLib.Server
 			}
 		}
 
-		public void OnConnect(Packet packet, IPEndPoint clientIPEndPoint)
+		private async void ReceivePacket()
+		{
+			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
+			{
+				// Extract data from the received packet
+				UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
+				IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
+				byte[] packetData = udpReceiveResult.Buffer;
+
+				// Construct new Packet object from the received packet
+				using Packet constructedPacket = new(packetData);
+				PacketReceived?.Invoke(constructedPacket, remoteEndPoint);
+			}
+		}
+
+		private void OnConnect(Packet packet, IPEndPoint clientIPEndPoint)
 		{
 			// Accept the client's connection request
 			int clientId = ConnectedClientsIdToIp.Count;
@@ -121,21 +137,6 @@ namespace NExLib.Server
 			}
 
 			logHelper.LogMessage(LogHelper.Loglevel.Info, $"New client connected from {clientIPEndPoint}.");
-		}
-
-		private async void ReceivePacket()
-		{
-			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
-			{
-				// Extract data from the received packet
-				UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
-				IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
-				byte[] packetData = udpReceiveResult.Buffer;
-
-				// Construct new Packet object from the received packet
-				using Packet constructedPacket = new(packetData);
-				PacketReceived?.Invoke(constructedPacket, remoteEndPoint);
-			}
 		}
 	}
 }
