@@ -10,6 +10,8 @@ namespace NExLib.Server
 {
 	public class Server
 	{
+		public const int MaxPacketsReceivedPerTick = 5;
+
 		public UdpClient UdpClient;
 		public Dictionary<IPEndPoint, int> ConnectedClientsIpToId = new();
 		public Dictionary<int, IPEndPoint> ConnectedClientsIdToIp = new();
@@ -19,27 +21,21 @@ namespace NExLib.Server
 		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
 		public event PacketCallback? PacketReceived;
 
-		public readonly int TicksPerSecond;
 
 		private int packetCount = 0;
 		private readonly LogHelper logHelper;
 		private readonly IPEndPoint serverEndPoint;
 
-		public Server(int port, int ticksPerSecond)
+		public Server(int port)
 		{
 			serverEndPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), port);
 			UdpClient = new UdpClient(serverEndPoint);
-			TicksPerSecond = ticksPerSecond;
 
 			logHelper = new LogHelper("[NExLib (Server)]: ");
 		}
 
 		public void Start()
 		{
-			AutoResetEvent autoResetEvent = new(false);
-			int timerPeriod = Math.Round(1 / TicksPerSecond);
-			Timer udpReceiveTimer = new(Task.Run(ReceivePacket), autoResetEvent, 0, timerPeriod);
-
 			PacketReceived += OnConnect;
 
 			logHelper.LogMessage(LogHelper.Loglevel.Info, $"Server started on {serverEndPoint}.");
@@ -58,10 +54,13 @@ namespace NExLib.Server
 			}
 		}
 
+		public void Tick()
+		{
+			ReceivePacket();
+		}
+
 		/// <summary>
 		/// Sends a packet to all clients.
-		/// <br/>
-		/// Important: the packet's recipientId should always be zero for the packet to be interpreted correctly on the clients.
 		/// </summary>
 		/// <param name="packet">The packet to send.</param>
 		public void SendPacketToAll(Packet packet)
@@ -118,22 +117,24 @@ namespace NExLib.Server
 				// Write the message of the day to the packet
 				newPacket.WriteData(messageOfTheDay);
 
-				SendPacketTo(newPacket, ConnectedClientsIpToId[clientId]);
+				SendPacketTo(newPacket, clientId);
 			}
 
 			logHelper.LogMessage(LogHelper.Loglevel.Info, $"New client connected from {clientIPEndPoint}.");
 		}
 
-		private void ReceivePacket(object? state)
+		private async void ReceivePacket()
 		{
-			// Extract data from the received packet
-			IPEndPoint remoteEndPoint = new(IPAddress.Any, 0);
-			byte[] packetData = UdpClient.Receive(ref remoteEndPoint);
-
-			// Construct new Packet object from the received packet
-			using (Packet constructedPacket = new(packetData))
+			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
 			{
-				PacketReceived?.Invoke(constructedPacket);
+				// Extract data from the received packet
+				UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
+				IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
+				byte[] packetData = udpReceiveResult.Buffer;
+
+				// Construct new Packet object from the received packet
+				using Packet constructedPacket = new(packetData);
+				PacketReceived?.Invoke(constructedPacket, remoteEndPoint);
 			}
 		}
 	}
