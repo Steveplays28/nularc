@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
 using NExLib.Common;
 
 namespace NExLib.Server
@@ -21,8 +19,6 @@ namespace NExLib.Server
 		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
 		public event PacketCallback? PacketReceived;
 
-
-		private int packetCount = 0;
 		private readonly LogHelper logHelper;
 		private readonly IPEndPoint serverEndPoint;
 
@@ -38,7 +34,7 @@ namespace NExLib.Server
 		{
 			PacketReceived += OnConnect;
 
-			logHelper.LogMessage(LogHelper.Loglevel.Info, $"Server started on {serverEndPoint}.");
+			logHelper.LogMessage(LogHelper.LogLevel.Info, $"Server started on {serverEndPoint}.");
 		}
 
 		public void Stop()
@@ -46,17 +42,17 @@ namespace NExLib.Server
 			try
 			{
 				UdpClient.Close();
-				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Successfully closed the UdpClient!");
+				logHelper.LogMessage(LogHelper.LogLevel.Info, $"Successfully closed the UdpClient!");
 			}
 			catch (SocketException e)
 			{
-				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Failed closing the UdpClient: {e}");
+				logHelper.LogMessage(LogHelper.LogLevel.Info, $"Failed closing the UdpClient: {e}");
 			}
 		}
 
 		public void Tick()
 		{
-			ReceivePacket();
+			ReceivePackets();
 		}
 
 		/// <summary>
@@ -99,7 +95,7 @@ namespace NExLib.Server
 			}
 		}
 
-		private async void ReceivePacket()
+		private async void ReceivePackets()
 		{
 			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
 			{
@@ -108,35 +104,35 @@ namespace NExLib.Server
 				IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
 				byte[] packetData = udpReceiveResult.Buffer;
 
-				// Construct new Packet object from the received packet
-				using Packet constructedPacket = new(packetData);
-				PacketReceived?.Invoke(constructedPacket, remoteEndPoint);
+				// Create new Packet object from the received packet data and invoke PacketReceived event
+				using Packet packet = new(packetData);
+				PacketReceived?.Invoke(packet, remoteEndPoint);
 			}
 		}
 
 		private void OnConnect(Packet packet, IPEndPoint clientIPEndPoint)
 		{
+			if (ConnectedClientsIdToIp.ContainsValue(clientIPEndPoint))
+			{
+				logHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client with IP {clientIPEndPoint} tried to connect, but is already connected!");
+				return;
+			}
+
 			// Accept the client's connection request
 			int clientId = ConnectedClientsIdToIp.Count;
 			ConnectedClientsIdToIp.Add(clientId, clientIPEndPoint);
 			ConnectedClientsIpToId.Add(clientIPEndPoint, clientId);
-			// TODO: Check if client isn't already connected
-
-			string messageOfTheDay = "Hello, this is the message of the day! :)";
 
 			// Send a new packet back to the newly connected client
-			using (Packet newPacket = new(0, 0))
+			using (Packet newPacket = new(0))
 			{
 				// Write the client ID to the packet
-				newPacket.WriteData(clientId);
-
-				// Write the message of the day to the packet
-				newPacket.WriteData(messageOfTheDay);
+				newPacket.Writer.Write(clientId);
 
 				SendPacketTo(newPacket, clientId);
 			}
 
-			logHelper.LogMessage(LogHelper.Loglevel.Info, $"New client connected from {clientIPEndPoint}.");
+			logHelper.LogMessage(LogHelper.LogLevel.Info, $"New client connected from {clientIPEndPoint}");
 		}
 	}
 }

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace NExLib.Common
 {
@@ -9,149 +8,71 @@ namespace NExLib.Common
 	/// </summary>
 	public class Packet : IDisposable
 	{
-		public readonly byte packetNumber;
-		public readonly byte connectedFunction;
+		public readonly short ConnectedMethod;
 
-		private readonly MemoryStream memoryStream;
-		private readonly BinaryWriter binaryWriter;
-		private readonly BinaryReader binaryReader;
+		public BinaryWriter Writer;
+		public BinaryReader Reader;
 
-		public Packet(byte packetNumber, byte connectedFunction)
+		private readonly MemoryStream memoryStream = new();
+
+		/// <summary>
+		/// Creates a new empty Packet, containing only the ConnectedMethod property.
+		/// </summary>
+		/// <param name="connectedMethod">The method that is connected to the Packet.</param>
+		public Packet(short connectedMethod)
 		{
-			memoryStream = new MemoryStream();
-			binaryWriter = new BinaryWriter(memoryStream);
-			binaryReader = new BinaryReader(memoryStream);
+			Writer = new BinaryWriter(memoryStream);
+			Reader = new BinaryReader(memoryStream);
 
-			this.packetNumber = packetNumber;
-			this.connectedFunction = connectedFunction;
-
-			// TODO: Error handling
+			ConnectedMethod = connectedMethod;
 		}
+		/// <summary>
+		/// Creates a new Packet from a byte array, and sets the Packet's ConnectedMethod property to the first byte of given byte array.
+		/// </summary>
+		/// <param name="byteArray">The byte array to create the Packet from.</param>
 		public Packet(byte[] byteArray)
 		{
-			memoryStream = new MemoryStream();
-			binaryWriter = new BinaryWriter(memoryStream);
-			binaryReader = new BinaryReader(memoryStream);
+			Writer = new BinaryWriter(memoryStream);
+			Reader = new BinaryReader(memoryStream);
 
-			binaryWriter.Write(byteArray);
+			Writer.Write(byteArray);
 			memoryStream.Position = 0;
 
-			packetNumber = ReadByte();
-			connectedFunction = ReadByte();
-
-			// TODO: Error handling
+			ConnectedMethod = Reader.ReadInt16();
 		}
 
-		#region WriteData
 		/// <summary>
-		/// Prepends a header to the packet (containing the number of the packet, the connected function of the packet, the length of the packet's contents, and a checksum if enabled). <br/>
-		/// Make sure to do this after all data has been written to the packet!
+		/// Prefixes a header to the Packet, containing the connected method of the Packet. <br/>
 		/// </summary>
 		public void WritePacketHeader()
 		{
-			// // Create new MemoryStream and BinaryWriter for the header
-			// MemoryStream newMemoryStream = new();
-			// BinaryWriter newBinaryWriter = new(newMemoryStream);
-
-			// // Write header data to the new MemoryStream
-			// newBinaryWriter.Write(packetNumber);
-			// newBinaryWriter.Write(connectedFunction);
-
-			// // Copy the old MemoryStream to the new MemoryStream, and update the memoryStream variable
-			// memoryStream.Position = 0;
-			// memoryStream.CopyTo(newMemoryStream);
-			// memoryStream = newMemoryStream;
-
-			// // Dispose the new MemoryStream and the new BinaryWriter
-			// newBinaryWriter.Dispose();
-			// newMemoryStream.Dispose();
-
-
 			// Reset MemoryStream's position
 			memoryStream.Position = 0;
 
-			// Write header data to the MemoryStream
-			binaryWriter.Write(packetNumber);
-			binaryWriter.Write(connectedFunction);
+			// Write header data to the Packet
+			Writer.Write(ConnectedMethod);
 
 			// Set MemoryStream's position back to the last byte
 			memoryStream.Position = memoryStream.Length;
 		}
 
-		public void WriteData(bool data)
-		{
-			// Write data to packet
-			binaryWriter.Write(data);
-		}
-		public void WriteData(int data)
-		{
-			// Write data to packet
-			binaryWriter.Write(data);
-		}
-		public void WriteData(float data)
-		{
-			// Write data to packet
-			binaryWriter.Write(data);
-		}
-		public void WriteData(string data)
-		{
-			// Write length prefix and data to packet
-			binaryWriter.Write(data);
-		}
-		#endregion
-
-		#region ReadData
-		public bool ReadBoolean()
-		{
-			return binaryReader.ReadBoolean();
-		}
-		public byte ReadByte()
-		{
-			return binaryReader.ReadByte();
-		}
-		public int ReadInt32()
-		{
-			return binaryReader.ReadInt32();
-		}
-		public float ReadFloat()
-		{
-			return binaryReader.ReadSingle();
-		}
-		public string ReadString()
-		{
-			return binaryReader.ReadString();
-		}
-		#endregion
-
-		/// <summmary>
-		/// Calculates a SHA256 checksum from the binary writer's base stream.
-		/// </summmary>
-		// private string CalculateChecksum()
-		// {
-		// 	using (var sha256 = SHA256.Create())
-		// 	{
-		// 		byte[] checksum = sha256.ComputeHash(memoryStream);
-		// 		return BitConverter.ToString(checksum).Replace("-", "").ToLowerInvariant();
-		// 	}
-		// }
-
-		/// <summmary>
-		/// Returns the packet's data as a byte array. <br/>
-		/// Do not use if the packet is still being written to.
-		/// </summmary>
+		/// <returns>All the data in the Packet as a byte array.</returns>
 		public byte[] ReturnData()
 		{
 			// Write all pending data to memory stream
-			binaryWriter.Flush();
+			Writer.Flush();
 
-			// Return byte array
+			// Return data as byte array
 			return memoryStream.ToArray();
 		}
 
+		/// <summary>
+		/// Disposes of the Packet's BinaryWriter, BinaryReader, and MemoryStream.
+		/// </summary>
 		public void Dispose()
 		{
-			binaryWriter.Dispose();
-			binaryReader.Dispose();
+			Writer.Dispose();
+			Reader.Dispose();
 			memoryStream.Dispose();
 
 			GC.SuppressFinalize(this);
