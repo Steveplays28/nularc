@@ -10,60 +10,42 @@ namespace NExLib.Client
 	{
 		public const string DefaultServerIp = "127.0.0.1";
 		public const int DefaultServerPort = 24465;
+		public const int MaxPacketsReceivedPerTick = 5;
 
-		public UdpClient? UdpClient;
+		public UdpClient UdpClient = new();
 		public string ServerIp { get; private set; } = DefaultServerIp;
 		public int ServerPort { get; private set; } = DefaultServerPort;
-		public int PacketCount { get; private set; } = 0;
 		public bool IsConnected { get; private set; }
 
-		public delegate void PacketCallback(Packet packet);
+		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
 		public event PacketCallback? PacketReceived;
 
 		private IPEndPoint? serverEndPoint;
-		private readonly IPEndPoint? localEndPoint;
 		private readonly LogHelper logHelper = new("[NExLib (Client)]: ");
-
-		public Client()
-		{
-			UdpClient = new UdpClient();
-			localEndPoint = UdpClient.Client.LocalEndPoint as IPEndPoint;
-
-			try
-			{
-				// Create and start a background thread for ReceivePacket(), so it doesn't block Godot's main thread
-				Thread udpReceiveThread = new(new ThreadStart(ReceivePacket))
-				{
-					Name = "UDP receive thread",
-					IsBackground = true
-				};
-				udpReceiveThread.Start();
-				logHelper.LogMessage(LogHelper.Loglevel.Info, $"Started listening for messages from the server on {localEndPoint}.");
-			}
-			catch (Exception e)
-			{
-				logHelper.LogMessage(LogHelper.Loglevel.Error, $"Failed initializing the UdpClient: couldn't create background thread \"UDP receive thread\".\n{e}");
-			}
-		}
 
 		public void Close()
 		{
 			try
 			{
 				UdpClient?.Close();
-				logHelper.LogMessage(LogHelper.Loglevel.Info, "Successfully closed the UdpClient!");
+				logHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UdpClient!");
 			}
 			catch (SocketException e)
 			{
-				logHelper.LogMessage(LogHelper.Loglevel.Error, $"Failed closing the UdpClient: {e}");
+				logHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UdpClient: {e}");
 			}
+		}
+
+		public void Tick()
+		{
+			ReceivePackets();
 		}
 
 		public void Connect(string ip, int port)
 		{
 			if (IsConnected)
 			{
-				logHelper.LogMessage(LogHelper.Loglevel.Warning, "Failed connecting to the server: already connected to a server.");
+				logHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server.");
 				return;
 			}
 
@@ -71,16 +53,16 @@ namespace NExLib.Client
 			serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
 
 			// Send connect packet
-			using Packet packet = new(0, 0);
+			using Packet packet = new((int)PacketMethod.Connect);
 			SendPacket(packet);
-			logHelper.LogMessage(LogHelper.Loglevel.Info, "Sent connect packet to the server.");
+			logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
 		}
 
 		public void Disconnect()
 		{
 			if (!IsConnected)
 			{
-				logHelper.LogMessage(LogHelper.Loglevel.Warning, "Failed disconnecting from the server: not connected to a server.");
+				logHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
 				return;
 			}
 
@@ -88,9 +70,9 @@ namespace NExLib.Client
 			serverEndPoint = null;
 
 			// Send disconnect packet
-			using Packet packet = new(0, 0);
+			using Packet packet = new((int)PacketMethod.Disconnect);
 			SendPacket(packet);
-			logHelper.LogMessage(LogHelper.Loglevel.Info, "Sent disconnect packet to the server.");
+			logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
 		}
 
 		/// <summary>
@@ -110,27 +92,21 @@ namespace NExLib.Client
 			UdpClient?.Send(packetData, packetData.Length, serverEndPoint);
 		}
 
-		private void ReceivePacket()
+		/// <summary>
+		/// Receives up to MaxPacketsReceivedPerTick asynchronously.
+		/// </summary>
+		private async void ReceivePackets()
 		{
-			try
+			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
 			{
 				// Extract data from the received packet
-				IPEndPoint remoteEndPoint = new(IPAddress.Parse(DefaultServerIp), DefaultServerPort);
-				byte[]? packetData = UdpClient?.Receive(ref remoteEndPoint);
+				UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
+				IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
+				byte[] packetData = udpReceiveResult.Buffer;
 
-				// Debug
-				// logHelper.LogMessage(LogHelper.Loglevel.Info, $"Received bytes: {string.Join(", ", packetData)}");
-
-				// Construct new Packet object from the received packet
-				if (packetData != null)
-				{
-					using Packet constructedPacket = new(packetData);
-					PacketReceived?.Invoke(constructedPacket);
-				}
-			}
-			catch (Exception e)
-			{
-				logHelper.LogMessage(LogHelper.Loglevel.Error, $"Failed receiving a packet from the server: {e}\nCheck if the client is connected properly!");
+				// Create new Packet object from the received packet data and invoke PacketReceived event
+				using Packet packet = new(packetData);
+				PacketReceived?.Invoke(packet, remoteEndPoint);
 			}
 		}
 	}

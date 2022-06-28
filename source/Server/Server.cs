@@ -95,6 +95,9 @@ namespace NExLib.Server
 			}
 		}
 
+		/// <summary>
+		/// Receives up to MaxPacketsReceivedPerTick asynchronously.
+		/// </summary>
 		private async void ReceivePackets()
 		{
 			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
@@ -124,7 +127,7 @@ namespace NExLib.Server
 			ConnectedClientsIpToId.Add(clientIPEndPoint, clientId);
 
 			// Send a new packet back to the newly connected client
-			using (Packet newPacket = new(0))
+			using (Packet newPacket = new((int)PacketMethod.Connect))
 			{
 				// Write the client ID to the packet
 				newPacket.Writer.Write(clientId);

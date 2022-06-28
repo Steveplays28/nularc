@@ -8,7 +8,7 @@ namespace NExLib.Common
 	/// </summary>
 	public class Packet : IDisposable
 	{
-		public readonly short ConnectedMethod;
+		public readonly int ConnectedMethod;
 
 		public BinaryWriter Writer;
 		public BinaryReader Reader;
@@ -19,7 +19,7 @@ namespace NExLib.Common
 		/// Creates a new empty Packet, containing only the ConnectedMethod property.
 		/// </summary>
 		/// <param name="connectedMethod">The method that is connected to the Packet.</param>
-		public Packet(short connectedMethod)
+		public Packet(int connectedMethod)
 		{
 			Writer = new BinaryWriter(memoryStream);
 			Reader = new BinaryReader(memoryStream);
@@ -38,7 +38,7 @@ namespace NExLib.Common
 			Writer.Write(byteArray);
 			memoryStream.Position = 0;
 
-			ConnectedMethod = Reader.ReadInt16();
+			ConnectedMethod = Reader.ReadInt32();
 		}
 
 		/// <summary>

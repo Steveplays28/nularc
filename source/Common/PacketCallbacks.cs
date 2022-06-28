@@ -1,7 +1,8 @@
 namespace NExLib.Common
 {
-	public static class PacketCallbacks
+	public enum PacketMethod : int
 	{
-		
+		Connect = 0,
+		Disconnect
 	}
 }
