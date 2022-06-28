@@ -32,7 +32,7 @@ namespace NExLib.Server
 
 		public void Start()
 		{
-			PacketReceived += OnConnect;
+			PacketReceived += PacketReceivedHandler;
 
 			logHelper.LogMessage(LogHelper.LogLevel.Info, $"Server started on {serverEndPoint}.");
 		}
@@ -113,8 +113,24 @@ namespace NExLib.Server
 			}
 		}
 
-		private void OnConnect(Packet packet, IPEndPoint clientIPEndPoint)
+		private void PacketReceivedHandler(Packet packet, IPEndPoint clientIPEndPoint)
 		{
+			if (packet.ConnectedMethod == (int)PacketMethod.Connect)
+			{
+				ClientConnected(clientIPEndPoint);
+				return;
+			}
+
+			if (packet.ConnectedMethod == (int)PacketMethod.Disconnect)
+			{
+				ClientDisconnected(clientIPEndPoint);
+				return;
+			}
+		}
+
+		private void ClientConnected(IPEndPoint clientIPEndPoint)
+		{
+			// Check if client is already connected
 			if (ConnectedClientsIdToIp.ContainsValue(clientIPEndPoint))
 			{
 				logHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client with IP {clientIPEndPoint} tried to connect, but is already connected!");
@@ -136,6 +152,22 @@ namespace NExLib.Server
 			}
 
 			logHelper.LogMessage(LogHelper.LogLevel.Info, $"New client connected from {clientIPEndPoint}");
+		}
+
+		private void ClientDisconnected(IPEndPoint clientIPEndPoint)
+		{
+			// Check if client is already disconnected
+			if (!ConnectedClientsIdToIp.ContainsValue(clientIPEndPoint))
+			{
+				logHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client with IP {clientIPEndPoint} tried to disconnect, but is already disconnected!");
+				return;
+			}
+
+			// Disconnect the client
+			ConnectedClientsIdToIp.Remove(ConnectedClientsIpToId[clientIPEndPoint]);
+			ConnectedClientsIpToId.Remove(clientIPEndPoint);
+
+			logHelper.LogMessage(LogHelper.LogLevel.Info, $"Client {clientIPEndPoint} disconnected.");
 		}
 	}
 }
