@@ -13,7 +13,7 @@ namespace NExLib.Common
 		public BinaryWriter Writer;
 		public BinaryReader Reader;
 
-		private readonly MemoryStream memoryStream = new();
+		private readonly MemoryStream memoryStream = new MemoryStream();
 
 		/// <summary>
 		/// Creates a new empty Packet, containing only the ConnectedMethod property.

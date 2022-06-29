@@ -10,16 +10,16 @@ namespace NExLib.Client
 		public const int DefaultServerPort = 24465;
 		public const int MaxPacketsReceivedPerTick = 5;
 
-		public UdpClient UdpClient = new();
+		public UdpClient UdpClient = new UdpClient();
 		public string ServerIp { get; private set; } = DefaultServerIp;
 		public int ServerPort { get; private set; } = DefaultServerPort;
 		public bool IsConnected { get; private set; }
 
 		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
-		public event PacketCallback? PacketReceived;
+		public event PacketCallback PacketReceived;
 
-		private IPEndPoint? serverEndPoint;
-		private readonly LogHelper logHelper = new("[NExLib (Client)]: ");
+		private IPEndPoint serverEndPoint;
+		private readonly LogHelper logHelper = new LogHelper("[NExLib (Client)]: ");
 
 		public void Close()
 		{
@@ -51,9 +51,11 @@ namespace NExLib.Client
 			serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
 
 			// Send connect packet
-			using Packet packet = new((int)PacketMethod.Connect);
-			SendPacket(packet);
-			logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
+			using (Packet packet = new Packet((int)PacketMethod.Connect))
+			{
+				SendPacket(packet);
+				logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
+			}
 		}
 
 		public void Disconnect()
@@ -68,9 +70,11 @@ namespace NExLib.Client
 			serverEndPoint = null;
 
 			// Send disconnect packet
-			using Packet packet = new((int)PacketMethod.Disconnect);
-			SendPacket(packet);
-			logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
+			using (Packet packet = new Packet((int)PacketMethod.Disconnect))
+			{
+				SendPacket(packet);
+				logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
+			}
 		}
 
 		/// <summary>
@@ -103,8 +107,10 @@ namespace NExLib.Client
 				byte[] packetData = udpReceiveResult.Buffer;
 
 				// Create new Packet object from the received packet data and invoke PacketReceived event
-				using Packet packet = new(packetData);
-				PacketReceived?.Invoke(packet, remoteEndPoint);
+				using (Packet packet = new Packet(packetData))
+				{
+					PacketReceived?.Invoke(packet, remoteEndPoint);
+				}
 			}
 		}
 	}

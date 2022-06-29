@@ -10,13 +10,13 @@ namespace NExLib.Server
 		public const int MaxPacketsReceivedPerTick = 5;
 
 		public UdpClient UdpClient;
-		public Dictionary<IPEndPoint, int> ConnectedClientsIpToId = new();
-		public Dictionary<int, IPEndPoint> ConnectedClientsIdToIp = new();
-		public Dictionary<IPEndPoint, int> SavedClientsIpToId = new();
-		public Dictionary<int, IPEndPoint> SavedClientsIdToIp = new();
+		public Dictionary<IPEndPoint, int> ConnectedClientsIpToId = new Dictionary<IPEndPoint, int>();
+		public Dictionary<int, IPEndPoint> ConnectedClientsIdToIp = new Dictionary<int, IPEndPoint>();
+		public Dictionary<IPEndPoint, int> SavedClientsIpToId = new Dictionary<IPEndPoint, int>();
+		public Dictionary<int, IPEndPoint> SavedClientsIdToIp = new Dictionary<int, IPEndPoint>();
 
 		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
-		public event PacketCallback? PacketReceived;
+		public event PacketCallback PacketReceived;
 
 		private readonly LogHelper logHelper;
 		private readonly IPEndPoint serverEndPoint;
@@ -88,7 +88,7 @@ namespace NExLib.Server
 			byte[] packetData = packet.ReturnData();
 
 			// Send the packet to the specified client
-			if (ConnectedClientsIdToIp.TryGetValue(recipientId, out IPEndPoint? connectedClient))
+			if (ConnectedClientsIdToIp.TryGetValue(recipientId, out IPEndPoint connectedClient))
 			{
 				UdpClient.Send(packetData, packetData.Length, connectedClient);
 			}
@@ -107,8 +107,10 @@ namespace NExLib.Server
 				byte[] packetData = udpReceiveResult.Buffer;
 
 				// Create new Packet object from the received packet data and invoke PacketReceived event
-				using Packet packet = new(packetData);
-				PacketReceived?.Invoke(packet, remoteEndPoint);
+				using (Packet packet = new Packet(packetData))
+				{
+					PacketReceived?.Invoke(packet, remoteEndPoint);
+				}
 			}
 		}
 
@@ -142,7 +144,7 @@ namespace NExLib.Server
 			ConnectedClientsIpToId.Add(clientIPEndPoint, clientId);
 
 			// Send a new packet back to the newly connected client
-			using (Packet newPacket = new((int)PacketMethod.Connect))
+			using (Packet newPacket = new Packet((int)PacketMethod.Connect))
 			{
 				// Write the client ID to the packet
 				newPacket.Writer.Write(clientId);
