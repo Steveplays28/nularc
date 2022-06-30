@@ -14,23 +14,29 @@ namespace NExLib.Client
 		public string ServerIp { get; private set; } = DefaultServerIp;
 		public int ServerPort { get; private set; } = DefaultServerPort;
 		public bool IsConnected { get; private set; }
-
+		public int ClientId { get; private set; }
 		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
 		public event PacketCallback PacketReceived;
 
+		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
+
 		private IPEndPoint serverEndPoint;
-		private readonly LogHelper logHelper = new LogHelper("[NExLib (Client)]: ");
 
 		public void Close()
 		{
+			if (UdpClient == null)
+			{
+				return;
+			}
+
 			try
 			{
-				UdpClient?.Close();
-				logHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UdpClient!");
+				UdpClient.Close();
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UdpClient!");
 			}
 			catch (SocketException e)
 			{
-				logHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UdpClient: {e}");
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UdpClient: {e}");
 			}
 		}
 
@@ -43,18 +49,20 @@ namespace NExLib.Client
 		{
 			if (IsConnected)
 			{
-				logHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server.");
 				return;
 			}
 
-			// Set server endpoint
-			serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+			PacketReceived += PacketReceivedHandler;
+			ServerIp = ip;
+			ServerPort = port;
+			serverEndPoint = new IPEndPoint(IPAddress.Parse(ServerIp), ServerPort);
 
 			// Send connect packet
 			using (Packet packet = new Packet((int)PacketMethod.Connect))
 			{
 				SendPacket(packet);
-				logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
 			}
 		}
 
@@ -62,18 +70,18 @@ namespace NExLib.Client
 		{
 			if (!IsConnected)
 			{
-				logHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
 				return;
 			}
 
-			// Reset server endpoint
+			IsConnected = false;
 			serverEndPoint = null;
 
 			// Send disconnect packet
 			using (Packet packet = new Packet((int)PacketMethod.Disconnect))
 			{
 				SendPacket(packet);
-				logHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
 			}
 		}
 
@@ -84,14 +92,11 @@ namespace NExLib.Client
 		/// <returns></returns>
 		public void SendPacket(Packet packet)
 		{
-			// Write packet header
-			packet.WritePacketHeader();
-
 			// Get data from the packet
 			byte[] packetData = packet.ReturnData();
 
 			// Send the packet to the server
-			UdpClient?.Send(packetData, packetData.Length, serverEndPoint);
+			UdpClient.Send(packetData, packetData.Length, serverEndPoint);
 		}
 
 		/// <summary>
@@ -99,6 +104,11 @@ namespace NExLib.Client
 		/// </summary>
 		private async void ReceivePackets()
 		{
+			if (UdpClient == null)
+			{
+				return;
+			}
+
 			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
 			{
 				// Extract data from the received packet
@@ -109,9 +119,40 @@ namespace NExLib.Client
 				// Create new Packet object from the received packet data and invoke PacketReceived event
 				using (Packet packet = new Packet(packetData))
 				{
-					PacketReceived?.Invoke(packet, remoteEndPoint);
+					if (PacketReceived != null)
+					{
+						LogHelper.LogMessage(LogHelper.LogLevel.Info, string.Join(", ", packetData));
+						LogHelper.LogMessage(LogHelper.LogLevel.Info, packet.ConnectedMethod.ToString());
+						PacketReceived.Invoke(packet, remoteEndPoint);
+					}
 				}
 			}
+		}
+
+		private void PacketReceivedHandler(Packet packet, IPEndPoint serverIPEndPoint)
+		{
+			if (packet.ConnectedMethod == (int)PacketMethod.Connect)
+			{
+				Connected(packet, serverIPEndPoint);
+				return;
+			}
+
+			if (packet.ConnectedMethod == (int)PacketMethod.Disconnect)
+			{
+				Disconnected(serverIPEndPoint);
+				return;
+			}
+		}
+
+		private void Connected(Packet packet, IPEndPoint serverIPEndPoint)
+		{
+			ClientId = packet.Reader.ReadInt32();
+			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connected to server {serverIPEndPoint}, received client ID {ClientId}.");
+		}
+
+		private void Disconnected(IPEndPoint serverIPEndPoint)
+		{
+			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
 		}
 	}
 }

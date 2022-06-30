@@ -25,6 +25,8 @@ namespace NExLib.Common
 			Reader = new BinaryReader(memoryStream);
 
 			ConnectedMethod = connectedMethod;
+
+			Writer.Write(ConnectedMethod);
 		}
 		/// <summary>
 		/// Creates a new Packet from a byte array, and sets the Packet's ConnectedMethod property to the first byte of given byte array.
@@ -39,21 +41,6 @@ namespace NExLib.Common
 			memoryStream.Position = 0;
 
 			ConnectedMethod = Reader.ReadInt32();
-		}
-
-		/// <summary>
-		/// Prefixes a header to the Packet, containing the connected method of the Packet. <br/>
-		/// </summary>
-		public void WritePacketHeader()
-		{
-			// Reset MemoryStream's position
-			memoryStream.Position = 0;
-
-			// Write header data to the Packet
-			Writer.Write(ConnectedMethod);
-
-			// Set MemoryStream's position back to the last byte
-			memoryStream.Position = memoryStream.Length;
 		}
 
 		/// <returns>All the data in the Packet as a byte array.</returns>

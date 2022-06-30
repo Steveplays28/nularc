@@ -12,7 +12,7 @@ namespace NExLib.Common
 			Error
 		}
 		public delegate void LogDelegate(LogLevel logLevel, string logMessage);
-		public event LogDelegate? Log;
+		public event LogDelegate Log;
 		public string Prefix;
 
 		public LogHelper(string prefix)
