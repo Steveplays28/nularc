@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <RootNamespace>NExLib</RootNamespace>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
 </Project>
