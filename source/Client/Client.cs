@@ -16,8 +16,10 @@ namespace NExLib.Client
 		public int ServerPort { get; private set; } = DefaultServerPort;
 		public bool IsConnected { get; private set; }
 		public int ClientId { get; private set; }
-		public delegate void PacketCallback(Packet packet, IPEndPoint clientIPEndPoint);
+		public delegate void PacketCallback(Packet packet, IPEndPoint serverIPEndPoint);
 		public event PacketCallback PacketReceived;
+		public event PacketCallback Connected;
+		public event PacketCallback Disconnected;
 
 		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
 
@@ -54,13 +56,14 @@ namespace NExLib.Client
 				return;
 			}
 
-			PacketReceived += PacketReceivedHandler;
+			PacketReceived += ConnectedHandler;
+			PacketReceived += DisconnectedHandler;
 			ServerIp = ip;
 			ServerPort = port;
 			serverEndPoint = new IPEndPoint(IPAddress.Parse(ServerIp), ServerPort);
 
 			// Send connect packet
-			using (Packet packet = new Packet((int)PacketMethod.Connect))
+			using (Packet packet = new Packet((int)PacketConnectedMethod.Connect))
 			{
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
@@ -76,7 +79,7 @@ namespace NExLib.Client
 			}
 
 			// Send disconnect packet
-			using (Packet packet = new Packet((int)PacketMethod.Disconnect))
+			using (Packet packet = new Packet((int)PacketConnectedMethod.Disconnect))
 			{
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
@@ -84,7 +87,8 @@ namespace NExLib.Client
 
 			IsConnected = false;
 			serverEndPoint = null;
-			PacketReceived -= PacketReceivedHandler;
+			PacketReceived -= ConnectedHandler;
+			PacketReceived -= DisconnectedHandler;
 		}
 
 		/// <summary>
@@ -94,7 +98,7 @@ namespace NExLib.Client
 		/// <returns></returns>
 		public void SendPacket(Packet packet)
 		{
-			if (!IsConnected && packet.ConnectedMethod != (int)PacketMethod.Connect)
+			if (!IsConnected && packet.ConnectedMethod != (int)PacketConnectedMethod.Connect)
 			{
 				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried sending packet to server while client is not connected.");
 				return;
@@ -151,29 +155,27 @@ namespace NExLib.Client
 			}
 		}
 
-		private void PacketReceivedHandler(Packet packet, IPEndPoint serverIPEndPoint)
+		private void ConnectedHandler(Packet packet, IPEndPoint serverIPEndPoint)
 		{
-			if (packet.ConnectedMethod == (int)PacketMethod.Connect)
+			if (packet.ConnectedMethod != (int)PacketConnectedMethod.Connect)
 			{
-				Connected(packet, serverIPEndPoint);
 				return;
 			}
 
-			if (packet.ConnectedMethod == (int)PacketMethod.Disconnect)
-			{
-				Disconnected(serverIPEndPoint);
-				return;
-			}
-		}
-
-		private void Connected(Packet packet, IPEndPoint serverIPEndPoint)
-		{
 			ClientId = packet.Reader.ReadInt32();
+
+			Connected.Invoke(packet, serverIPEndPoint);
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connected to server {serverIPEndPoint}, received client ID {ClientId}.");
 		}
 
-		private void Disconnected(IPEndPoint serverIPEndPoint)
+		private void DisconnectedHandler(Packet packet, IPEndPoint serverIPEndPoint)
 		{
+			if (packet.ConnectedMethod != (int)PacketConnectedMethod.Disconnect)
+			{
+				return;
+			}
+
+			Disconnected.Invoke(packet, serverIPEndPoint);
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
 		}
 	}

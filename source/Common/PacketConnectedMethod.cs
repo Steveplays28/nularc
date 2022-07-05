@@ -1,6 +1,6 @@
 namespace NExLib.Common
 {
-	public enum PacketMethod : int
+	public enum PacketConnectedMethod : int
 	{
 		Connect = 0,
 		Disconnect
