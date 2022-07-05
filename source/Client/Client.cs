@@ -92,6 +92,12 @@ namespace NExLib.Client
 		/// <returns></returns>
 		public void SendPacket(Packet packet)
 		{
+			if (!IsConnected)
+			{
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried sending packet to server while client is not connected.");
+				return;
+			}
+
 			// Get data from the packet
 			byte[] packetData = packet.ReturnData();
 
