@@ -19,7 +19,7 @@ Lightweight C# UDP networking library.
 
 ### Installation  
 Download the latest release DLL and add it to your `.csproj` file (inside the `<project>` tag):
-```json
+```
 <ItemGroup>
     <Reference Include="NExLib">
       <HintPath>libraries\\nexlib\nexlib.dll</HintPath>
