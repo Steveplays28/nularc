@@ -92,7 +92,7 @@ namespace NExLib.Client
 		/// <returns></returns>
 		public void SendPacket(Packet packet)
 		{
-			if (!IsConnected && (packet.ConnectedMethod != (int)PacketMethod.Connect || packet.ConnectedMethod != (int)PacketMethod.Disconnect))
+			if (!IsConnected && packet.ConnectedMethod != (int)PacketMethod.Connect)
 			{
 				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried sending packet to server while client is not connected.");
 				return;
