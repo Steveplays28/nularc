@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 using NExLib.Common;
@@ -101,8 +102,15 @@ namespace NExLib.Client
 			// Get data from the packet
 			byte[] packetData = packet.ReturnData();
 
-			// Send the packet to the server
-			UdpClient.Send(packetData, packetData.Length, serverEndPoint);
+			try
+			{
+				// Send the packet to the server
+				UdpClient.Send(packetData, packetData.Length, serverEndPoint);
+			}
+			catch (Exception e)
+			{
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Error occurred while trying to send packet to server: {e}\nCheck if the client is connected to the server.");
+			}
 		}
 
 		/// <summary>
@@ -117,20 +125,27 @@ namespace NExLib.Client
 
 			for (int i = 0; i < MaxPacketsReceivedPerTick && UdpClient.Available > 0; i++)
 			{
-				// Extract data from the received packet
-				UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
-				IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
-				byte[] packetData = udpReceiveResult.Buffer;
-
-				// Create new Packet object from the received packet data and invoke PacketReceived event
-				using (Packet packet = new Packet(packetData))
+				try
 				{
-					if (PacketReceived != null)
+					// Extract data from the received packet
+					UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
+					IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
+					byte[] packetData = udpReceiveResult.Buffer;
+
+					// Create new Packet object from the received packet data and invoke PacketReceived event
+					using (Packet packet = new Packet(packetData))
 					{
-						LogHelper.LogMessage(LogHelper.LogLevel.Info, string.Join(", ", packetData));
-						LogHelper.LogMessage(LogHelper.LogLevel.Info, packet.ConnectedMethod.ToString());
-						PacketReceived.Invoke(packet, remoteEndPoint);
+						if (PacketReceived != null)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Info, string.Join(", ", packetData));
+							LogHelper.LogMessage(LogHelper.LogLevel.Info, packet.ConnectedMethod.ToString());
+							PacketReceived.Invoke(packet, remoteEndPoint);
+						}
 					}
+				}
+				catch (Exception e)
+				{
+					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Error occurred while trying to receive packet from server: {e}\n");
 				}
 			}
 		}
