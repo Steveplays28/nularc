@@ -75,15 +75,16 @@ namespace NExLib.Client
 				return;
 			}
 
-			IsConnected = false;
-			serverEndPoint = null;
-
 			// Send disconnect packet
 			using (Packet packet = new Packet((int)PacketMethod.Disconnect))
 			{
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
 			}
+
+			IsConnected = false;
+			serverEndPoint = null;
+			PacketReceived -= PacketReceivedHandler;
 		}
 
 		/// <summary>
