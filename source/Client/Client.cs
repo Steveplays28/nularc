@@ -118,7 +118,7 @@ namespace NExLib.Client
 		/// </summary>
 		private async void ReceivePackets()
 		{
-			if (UdpClient == null)
+			if (UdpClient == null || !IsConnected)
 			{
 				return;
 			}
@@ -145,7 +145,7 @@ namespace NExLib.Client
 				}
 				catch (Exception e)
 				{
-					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Error occurred while trying to receive packet from server: {e}\n");
+					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Error occurred while trying to receive packet from server: {e}");
 				}
 			}
 		}
