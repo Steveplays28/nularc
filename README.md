@@ -48,6 +48,8 @@ If you want to add or change something, feel free to [make a pull request](https
 Please check if there isn't already a pull request open for this specific issue.  
 I will respond as soon as I can.
 
+## License  
+This project is licensed under the LGPLv2.1 License, see the [LICENSE file](https://github.com/Steveplays28/nexlib/blob/main/LICENSE) for more details.
 
 ## My links  
 Feel free to contact me via any of these platforms.
