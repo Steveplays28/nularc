@@ -25,17 +25,33 @@ namespace NExLib.Client
 
 		private IPEndPoint serverEndPoint;
 
+		public Client()
+		{
+			PacketReceived += ConnectedHandler;
+			PacketReceived += DisconnectedHandler;
+		}
+
+		/// <summary>
+		/// Closes and disposes the UDP client.
+		/// </summary>
 		public void Close()
 		{
 			if (UdpClient == null)
 			{
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried closing the UdpClient, but the UdpClient is null!");
+				return;
+			}
+			if (IsConnected)
+			{
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried closing the UdpClient, but the UdpClient is still connected to a server!\nDisconnect from the server before trying to close the UdpClient.");
 				return;
 			}
 
 			try
 			{
 				UdpClient.Close();
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UdpClient!");
+				UdpClient.Dispose();
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UdpClient.");
 			}
 			catch (SocketException e)
 			{
@@ -56,8 +72,6 @@ namespace NExLib.Client
 				return;
 			}
 
-			PacketReceived += ConnectedHandler;
-			PacketReceived += DisconnectedHandler;
 			ServerIp = ip;
 			ServerPort = port;
 			serverEndPoint = new IPEndPoint(IPAddress.Parse(ServerIp), ServerPort);
@@ -66,7 +80,7 @@ namespace NExLib.Client
 			using (Packet packet = new Packet((int)PacketConnectedMethod.Connect))
 			{
 				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent connect packet to the server.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {serverEndPoint}");
 			}
 		}
 
@@ -84,11 +98,6 @@ namespace NExLib.Client
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
 			}
-
-			IsConnected = false;
-			serverEndPoint = null;
-			PacketReceived -= ConnectedHandler;
-			PacketReceived -= DisconnectedHandler;
 		}
 
 		/// <summary>
@@ -123,8 +132,9 @@ namespace NExLib.Client
 		/// </summary>
 		private async void ReceivePackets()
 		{
-			if (UdpClient == null || !IsConnected)
+			if (UdpClient == null)
 			{
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried receiving packets, but the UdpClient is null!");
 				return;
 			}
 
@@ -174,6 +184,9 @@ namespace NExLib.Client
 			{
 				return;
 			}
+
+			IsConnected = false;
+			serverEndPoint = null;
 
 			Disconnected.Invoke(packet, serverIPEndPoint);
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
