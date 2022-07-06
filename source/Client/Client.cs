@@ -152,8 +152,6 @@ namespace NExLib.Client
 					{
 						if (PacketReceived != null)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Info, string.Join(", ", packetData));
-							LogHelper.LogMessage(LogHelper.LogLevel.Info, packet.ConnectedMethod.ToString());
 							PacketReceived.Invoke(packet, remoteEndPoint);
 						}
 					}
