@@ -172,6 +172,7 @@ namespace NExLib.Client
 				return;
 			}
 
+			IsConnected = true;
 			ClientId = packet.Reader.ReadInt32();
 
 			Connected.Invoke(packet, serverIPEndPoint);
@@ -187,6 +188,7 @@ namespace NExLib.Client
 
 			IsConnected = false;
 			serverEndPoint = null;
+			ClientId = 0;
 
 			Disconnected.Invoke(packet, serverIPEndPoint);
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
