@@ -131,13 +131,13 @@ namespace NExLib.Server
 
 		private void PacketReceivedHandler(Packet packet, IPEndPoint clientIPEndPoint)
 		{
-			if (packet.ConnectedMethod == (int)PacketConnectedMethod.Connect)
+			if (packet.Type == (int)DefaultPacketTypes.Connect)
 			{
 				ClientConnected(clientIPEndPoint);
 				return;
 			}
 
-			if (packet.ConnectedMethod == (int)PacketConnectedMethod.Disconnect)
+			if (packet.Type == (int)DefaultPacketTypes.Disconnect)
 			{
 				ClientDisconnected(clientIPEndPoint);
 				return;
@@ -159,7 +159,7 @@ namespace NExLib.Server
 			ConnectedClientsIpToId.Add(clientIPEndPoint, clientId);
 
 			// Send a new packet back to the newly connected client
-			using (Packet newPacket = new Packet((int)PacketConnectedMethod.Connect))
+			using (Packet newPacket = new Packet((int)DefaultPacketTypes.Connect))
 			{
 				// Write the client ID to the packet
 				newPacket.Writer.Write(clientId);

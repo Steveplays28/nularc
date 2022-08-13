@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using NExLib.Common;
@@ -24,11 +25,14 @@ namespace NExLib.Client
 		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
 
 		private IPEndPoint serverEndPoint;
+		private readonly Dictionary<int, List<PacketCallback>> PacketListeners = new Dictionary<int, List<PacketCallback>>();
 
 		public Client()
 		{
-			PacketReceived += ConnectedHandler;
-			PacketReceived += DisconnectedHandler;
+			PacketReceived += PacketReceivedWrapper;
+
+			Listen((int)DefaultPacketTypes.Connect, ConnectedHandler);
+			Listen((int)DefaultPacketTypes.Connect, DisconnectedHandler);
 		}
 
 		/// <summary>
@@ -77,7 +81,7 @@ namespace NExLib.Client
 			serverEndPoint = new IPEndPoint(IPAddress.Parse(ServerIp), ServerPort);
 
 			// Send connect packet
-			using (Packet packet = new Packet((int)PacketConnectedMethod.Connect))
+			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
 			{
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {serverEndPoint}");
@@ -93,7 +97,7 @@ namespace NExLib.Client
 			}
 
 			// Send disconnect packet
-			using (Packet packet = new Packet((int)PacketConnectedMethod.Disconnect))
+			using (Packet packet = new Packet((int)DefaultPacketTypes.Disconnect))
 			{
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
@@ -107,7 +111,7 @@ namespace NExLib.Client
 		/// <returns></returns>
 		public void SendPacket(Packet packet)
 		{
-			if (!IsConnected && packet.ConnectedMethod != (int)PacketConnectedMethod.Connect)
+			if (!IsConnected && packet.Type != (int)DefaultPacketTypes.Connect)
 			{
 				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried sending packet to server while client is not connected.");
 				return;
@@ -163,9 +167,33 @@ namespace NExLib.Client
 			}
 		}
 
+		private void Listen(int packetType, PacketCallback method)
+		{
+			if (!PacketListeners.ContainsKey(packetType))
+			{
+				var packetCallbacks = new List<PacketCallback>
+				{
+					method
+				};
+
+				PacketListeners.Add(packetType, packetCallbacks);
+				return;
+			}
+
+			PacketListeners[packetType].Add(method);
+		}
+
+		private void PacketReceivedWrapper(Packet packet, IPEndPoint serverIPEndPoint)
+		{
+			foreach (PacketCallback packetCallback in PacketListeners[packet.Type])
+			{
+				packetCallback.Invoke(packet, serverIPEndPoint);
+			}
+		}
+
 		private void ConnectedHandler(Packet packet, IPEndPoint serverIPEndPoint)
 		{
-			if (packet.ConnectedMethod != (int)PacketConnectedMethod.Connect)
+			if (packet.Type != (int)DefaultPacketTypes.Connect)
 			{
 				return;
 			}
@@ -179,7 +207,7 @@ namespace NExLib.Client
 
 		private void DisconnectedHandler(Packet packet, IPEndPoint serverIPEndPoint)
 		{
-			if (packet.ConnectedMethod != (int)PacketConnectedMethod.Disconnect)
+			if (packet.Type != (int)DefaultPacketTypes.Disconnect)
 			{
 				return;
 			}

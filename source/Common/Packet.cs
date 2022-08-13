@@ -8,7 +8,7 @@ namespace NExLib.Common
 	/// </summary>
 	public class Packet : IDisposable
 	{
-		public readonly int ConnectedMethod;
+		public readonly int Type;
 
 		public BinaryWriter Writer;
 		public BinaryReader Reader;
@@ -16,22 +16,22 @@ namespace NExLib.Common
 		private readonly MemoryStream memoryStream = new MemoryStream();
 
 		/// <summary>
-		/// Creates a new empty Packet, containing only the ConnectedMethod property.
+		/// Creates a new empty packet, containing only the header.
 		/// </summary>
-		/// <param name="connectedMethod">The method that is connected to the Packet.</param>
-		public Packet(int connectedMethod)
+		/// <param name="Type">The packet's type.</param>
+		public Packet(int type)
 		{
 			Writer = new BinaryWriter(memoryStream);
 			Reader = new BinaryReader(memoryStream);
 
-			ConnectedMethod = connectedMethod;
+			Type = type;
 
-			Writer.Write(ConnectedMethod);
+			Writer.Write(type);
 		}
 		/// <summary>
-		/// Creates a new Packet from a byte array, and sets the Packet's ConnectedMethod property to the first byte of given byte array.
+		/// Creates a new Packet from a byte array, and sets the packet's header.
 		/// </summary>
-		/// <param name="byteArray">The byte array to create the Packet from.</param>
+		/// <param name="byteArray">The byte array to create the packet from.</param>
 		public Packet(byte[] byteArray)
 		{
 			Writer = new BinaryWriter(memoryStream);
@@ -40,10 +40,10 @@ namespace NExLib.Common
 			Writer.Write(byteArray);
 			memoryStream.Position = 0;
 
-			ConnectedMethod = Reader.ReadInt32();
+			Type = Reader.ReadInt32();
 		}
 
-		/// <returns>All the data in the Packet as a byte array.</returns>
+		/// <returns>All the data in the packet as a byte array.</returns>
 		public byte[] ReturnData()
 		{
 			// Write all pending data to memory stream
