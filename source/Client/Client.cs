@@ -8,31 +8,27 @@ namespace NExLib.Client
 {
 	public class Client
 	{
-		public const string DefaultServerIp = "127.0.0.1";
-		public const int DefaultServerPort = 24465;
-		public const int MaxPacketsReceivedPerTick = 5;
-
 		public UdpClient UdpClient = new UdpClient();
-		public string ServerIp { get; private set; } = DefaultServerIp;
-		public int ServerPort { get; private set; } = DefaultServerPort;
+		public int MaxPacketsReceivedPerTick = 5;
+		public IPEndPoint ServerIPEndPoint;
+		public string ServerIP { get; private set; }
+		public int? ServerPort { get; private set; }
 		public bool IsConnected { get; private set; }
 		public int ClientId { get; private set; }
-		public delegate void PacketCallback(Packet packet, IPEndPoint serverIPEndPoint);
-		public event PacketCallback PacketReceived;
-		public event PacketCallback Connected;
-		public event PacketCallback Disconnected;
-
+		public delegate void PacketReceivedEventHandler(Packet packet);
+		public event PacketReceivedEventHandler PacketReceived;
+		public event PacketReceivedEventHandler Connected;
+		public event PacketReceivedEventHandler Disconnected;
 		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
 
-		private IPEndPoint serverEndPoint;
-		private readonly Dictionary<int, List<PacketCallback>> PacketListeners = new Dictionary<int, List<PacketCallback>>();
+		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new Dictionary<int, List<PacketReceivedEventHandler>>();
 
 		public Client()
 		{
-			PacketReceived += PacketReceivedWrapper;
+			PacketReceived += OnPacketReceived;
 
-			Listen((int)DefaultPacketTypes.Connect, ConnectedHandler);
-			Listen((int)DefaultPacketTypes.Connect, DisconnectedHandler);
+			Listen((int)DefaultPacketTypes.Connect, OnConnected);
+			Listen((int)DefaultPacketTypes.Connect, OnDisconnected);
 		}
 
 		/// <summary>
@@ -76,15 +72,15 @@ namespace NExLib.Client
 				return;
 			}
 
-			ServerIp = ip;
+			ServerIPEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
+			ServerIP = ip;
 			ServerPort = port;
-			serverEndPoint = new IPEndPoint(IPAddress.Parse(ServerIp), ServerPort);
 
 			// Send connect packet
 			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
 			{
 				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {serverEndPoint}");
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}");
 			}
 		}
 
@@ -102,6 +98,22 @@ namespace NExLib.Client
 				SendPacket(packet);
 				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Sent disconnect packet to the server.");
 			}
+		}
+
+		public void Listen(int packetType, PacketReceivedEventHandler method)
+		{
+			if (!PacketListeners.ContainsKey(packetType))
+			{
+				var packetListeners = new List<PacketReceivedEventHandler>
+				{
+					method
+				};
+
+				PacketListeners.Add(packetType, packetListeners);
+				return;
+			}
+
+			PacketListeners[packetType].Add(method);
 		}
 
 		/// <summary>
@@ -123,7 +135,7 @@ namespace NExLib.Client
 			try
 			{
 				// Send the packet to the server
-				UdpClient.Send(packetData, packetData.Length, serverEndPoint);
+				UdpClient.Send(packetData, packetData.Length, ServerIPEndPoint);
 			}
 			catch (Exception e)
 			{
@@ -138,7 +150,6 @@ namespace NExLib.Client
 		{
 			if (UdpClient == null)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried receiving packets, but the UdpClient is null!");
 				return;
 			}
 
@@ -154,9 +165,14 @@ namespace NExLib.Client
 					// Create new Packet object from the received packet data and invoke PacketReceived event
 					using (Packet packet = new Packet(packetData))
 					{
+						if (packetData.Length <= 0)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type}.");
+						}
+
 						if (PacketReceived != null)
 						{
-							PacketReceived.Invoke(packet, remoteEndPoint);
+							PacketReceived.Invoke(packet);
 						}
 					}
 				}
@@ -167,56 +183,34 @@ namespace NExLib.Client
 			}
 		}
 
-		private void Listen(int packetType, PacketCallback method)
+		private void OnPacketReceived(Packet packet)
 		{
-			if (!PacketListeners.ContainsKey(packetType))
+			foreach (PacketReceivedEventHandler PacketReceivedEventHandler in PacketListeners[packet.Type])
 			{
-				var packetCallbacks = new List<PacketCallback>
-				{
-					method
-				};
-
-				PacketListeners.Add(packetType, packetCallbacks);
-				return;
-			}
-
-			PacketListeners[packetType].Add(method);
-		}
-
-		private void PacketReceivedWrapper(Packet packet, IPEndPoint serverIPEndPoint)
-		{
-			foreach (PacketCallback packetCallback in PacketListeners[packet.Type])
-			{
-				packetCallback.Invoke(packet, serverIPEndPoint);
+				PacketReceivedEventHandler.Invoke(packet);
 			}
 		}
 
-		private void ConnectedHandler(Packet packet, IPEndPoint serverIPEndPoint)
+		private void OnConnected(Packet packet)
 		{
-			if (packet.Type != (int)DefaultPacketTypes.Connect)
-			{
-				return;
-			}
-
 			IsConnected = true;
 			ClientId = packet.Reader.ReadInt32();
 
-			Connected.Invoke(packet, serverIPEndPoint);
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connected to server {serverIPEndPoint}, received client ID {ClientId}.");
+			Connected.Invoke(packet);
+			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
 		}
 
-		private void DisconnectedHandler(Packet packet, IPEndPoint serverIPEndPoint)
+		private void OnDisconnected(Packet packet)
 		{
-			if (packet.Type != (int)DefaultPacketTypes.Disconnect)
-			{
-				return;
-			}
+			IPEndPoint serverIPEndPoint = ServerIPEndPoint;
 
 			IsConnected = false;
-			serverEndPoint = null;
+			ServerIPEndPoint = null;
+			ServerIP = null;
+			ServerPort = null;
 			ClientId = 0;
 
-			Disconnected.Invoke(packet, serverIPEndPoint);
+			Disconnected.Invoke(packet);
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
 		}
 	}
