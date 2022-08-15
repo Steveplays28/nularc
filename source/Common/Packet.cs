@@ -8,10 +8,13 @@ namespace NExLib.Common
 	/// </summary>
 	public class Packet : IDisposable
 	{
-		public readonly int Type;
-
+		/// <summary>
+		/// The header's length in bytes.
+		/// </summary>
+		public const int HeaderLength = 4;
 		public BinaryWriter Writer;
 		public BinaryReader Reader;
+		public readonly int Type;
 
 		private readonly MemoryStream memoryStream = new MemoryStream();
 

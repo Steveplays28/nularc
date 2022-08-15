@@ -162,14 +162,24 @@ namespace NExLib.Client
 					IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
 					byte[] packetData = udpReceiveResult.Buffer;
 
-					// Create new Packet object from the received packet data and invoke PacketReceived event
+					// Create new packet object from the received packet data
 					using (Packet packet = new Packet(packetData))
 					{
+						// Check if packet contains header and data
 						if (packetData.Length <= 0)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type}.");
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+						}
+						else if (packetData.Length < Packet.HeaderLength)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+						}
+						else if (packetData.Length == Packet.HeaderLength)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
 						}
 
+						// Invoke packet received event
 						if (PacketReceived != null)
 						{
 							PacketReceived.Invoke(packet);
