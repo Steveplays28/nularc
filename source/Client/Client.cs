@@ -8,17 +8,17 @@ namespace NExLib.Client
 {
 	public class Client
 	{
-		public UdpClient UdpClient = new UdpClient();
 		public int MaxPacketsReceivedPerTick = 5;
-		public IPEndPoint ServerIPEndPoint;
-		public string ServerIP { get; private set; }
-		public int? ServerPort { get; private set; }
-		public bool IsConnected { get; private set; }
-		public int ClientId { get; private set; }
 		public delegate void PacketReceivedEventHandler(Packet packet);
 		public event PacketReceivedEventHandler PacketReceived;
 		public event PacketReceivedEventHandler Connected;
 		public event PacketReceivedEventHandler Disconnected;
+		public UdpClient UdpClient { get; private set; }
+		public IPEndPoint ServerIPEndPoint { get; private set; }
+		public IPEndPoint IPEndPoint { get; private set; }
+		public bool HasStarted { get; private set; }
+		public bool IsConnected { get; private set; }
+		public int ClientId { get; private set; }
 		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
 
 		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new Dictionary<int, List<PacketReceivedEventHandler>>();
@@ -29,6 +29,22 @@ namespace NExLib.Client
 
 			Listen((int)DefaultPacketTypes.Connect, OnConnected);
 			Listen((int)DefaultPacketTypes.Connect, OnDisconnected);
+		}
+
+		/// <summary>
+		/// Initialises a new instance of the UDP client.
+		/// </summary>
+		public void Start()
+		{
+			if (UdpClient != null)
+			{
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried starting the UdpClient, but the UdpClient is null!");
+				return;
+			}
+
+			UdpClient = new UdpClient();
+
+			HasStarted = true;
 		}
 
 		/// <summary>
@@ -73,8 +89,6 @@ namespace NExLib.Client
 			}
 
 			ServerIPEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
-			ServerIP = ip;
-			ServerPort = port;
 
 			// Send connect packet
 			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
@@ -159,7 +173,6 @@ namespace NExLib.Client
 				{
 					// Extract data from the received packet
 					UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
-					IPEndPoint remoteEndPoint = udpReceiveResult.RemoteEndPoint;
 					byte[] packetData = udpReceiveResult.Buffer;
 
 					// Create new packet object from the received packet data
@@ -195,9 +208,9 @@ namespace NExLib.Client
 
 		private void OnPacketReceived(Packet packet)
 		{
-			foreach (PacketReceivedEventHandler PacketReceivedEventHandler in PacketListeners[packet.Type])
+			foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
 			{
-				PacketReceivedEventHandler.Invoke(packet);
+				packetReceivedEventHandler.Invoke(packet);
 			}
 		}
 
@@ -206,7 +219,10 @@ namespace NExLib.Client
 			IsConnected = true;
 			ClientId = packet.Reader.ReadInt32();
 
-			Connected.Invoke(packet);
+			if (Connected != null)
+			{
+				Connected.Invoke(packet);
+			}
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
 		}
 
@@ -216,11 +232,12 @@ namespace NExLib.Client
 
 			IsConnected = false;
 			ServerIPEndPoint = null;
-			ServerIP = null;
-			ServerPort = null;
 			ClientId = 0;
 
-			Disconnected.Invoke(packet);
+			if (Disconnected != null)
+			{
+				Disconnected.Invoke(packet);
+			}
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
 		}
 	}
