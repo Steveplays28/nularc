@@ -11,8 +11,6 @@ namespace NExLib.Client
 		public int MaxPacketsReceivedPerTick = 5;
 		public delegate void PacketReceivedEventHandler(Packet packet);
 		public event PacketReceivedEventHandler PacketReceived;
-		public event PacketReceivedEventHandler Connected;
-		public event PacketReceivedEventHandler Disconnected;
 		public UdpClient UdpClient { get; private set; }
 		public IPEndPoint ServerIPEndPoint { get; private set; }
 		public IPEndPoint IPEndPoint { get; private set; }
@@ -75,6 +73,9 @@ namespace NExLib.Client
 			}
 		}
 
+		/// <summary>
+		/// Should be ran every frame, put this in your app's main loop.
+		/// </summary>
 		public void Tick()
 		{
 			ReceivePackets();
@@ -114,6 +115,11 @@ namespace NExLib.Client
 			}
 		}
 
+		/// <summary>
+		/// Listens for packets of certain types getting received, and notifies subscribed methods.
+		/// </summary>
+		/// <param name="packetType">The packet type to listen for.</param>
+		/// <param name="method">The method to subscribe with.</param>
 		public void Listen(int packetType, PacketReceivedEventHandler method)
 		{
 			if (!PacketListeners.ContainsKey(packetType))
@@ -219,10 +225,6 @@ namespace NExLib.Client
 			IsConnected = true;
 			ClientId = packet.Reader.ReadInt32();
 
-			if (Connected != null)
-			{
-				Connected.Invoke(packet);
-			}
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
 		}
 
@@ -234,10 +236,6 @@ namespace NExLib.Client
 			ServerIPEndPoint = null;
 			ClientId = 0;
 
-			if (Disconnected != null)
-			{
-				Disconnected.Invoke(packet);
-			}
 			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Disconnected from server {serverIPEndPoint}");
 		}
 	}
