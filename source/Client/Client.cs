@@ -30,46 +30,46 @@ namespace NExLib.Client
 		}
 
 		/// <summary>
-		/// Initialises a new instance of the UDP client.
+		/// Starts a new instance of the UDP client on a random port.
 		/// </summary>
 		public void Start()
 		{
-			if (UdpClient != null)
+			if (HasStarted)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried starting the UdpClient, but the UdpClient is null!");
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
 				return;
 			}
 
 			UdpClient = new UdpClient();
-
 			HasStarted = true;
 		}
 
 		/// <summary>
-		/// Closes and disposes the UDP client.
+		/// Closes the UDP client.
 		/// </summary>
 		public void Close()
 		{
 			if (UdpClient == null)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried closing the UdpClient, but the UdpClient is null!");
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed closing the UDP client: the UDP client is null.");
 				return;
 			}
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried closing the UdpClient, but the UdpClient is still connected to a server!\nDisconnect from the server before trying to close the UdpClient.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
 				return;
 			}
 
 			try
 			{
 				UdpClient.Close();
-				UdpClient.Dispose();
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UdpClient.");
+
+				HasStarted = false;
+				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UDP client.");
 			}
 			catch (SocketException e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UdpClient: {e}");
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UDP client: {e}");
 			}
 		}
 
@@ -145,7 +145,7 @@ namespace NExLib.Client
 		{
 			if (!IsConnected && packet.Type != (int)DefaultPacketTypes.Connect)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Tried sending packet to server while client is not connected.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Failed sending a packet of type {packet.Type} to the server: not connected to any server.");
 				return;
 			}
 
@@ -159,7 +159,7 @@ namespace NExLib.Client
 			}
 			catch (Exception e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Error occurred while trying to send packet to server: {e}\nCheck if the client is connected to the server.");
+				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed sending a packet of type {packet.Type} to the server: {e}");
 			}
 		}
 

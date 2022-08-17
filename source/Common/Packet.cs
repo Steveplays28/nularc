@@ -4,7 +4,7 @@ using System.IO;
 namespace NExLib.Common
 {
 	/// <summary>
-	/// Writeable/readable packet, dispose using <c>Dispose()</c> when the packet is no longer in use.
+	/// Writeable/readable packet.
 	/// </summary>
 	public class Packet : IDisposable
 	{
@@ -32,7 +32,7 @@ namespace NExLib.Common
 			Writer.Write(type);
 		}
 		/// <summary>
-		/// Creates a new Packet from a byte array, and sets the packet's header.
+		/// Creates a new packet from a byte array containing a valid header and data.
 		/// </summary>
 		/// <param name="byteArray">The byte array to create the packet from.</param>
 		public Packet(byte[] byteArray)
@@ -46,7 +46,10 @@ namespace NExLib.Common
 			Type = Reader.ReadInt32();
 		}
 
-		/// <returns>All the data in the packet as a byte array.</returns>
+		/// <summary>
+		/// Gets the packet's header and data.
+		/// </summary>
+		/// <returns>A byte array containing the packet's header and data.</returns>
 		public byte[] ReturnData()
 		{
 			// Write all pending data to memory stream
@@ -57,7 +60,7 @@ namespace NExLib.Common
 		}
 
 		/// <summary>
-		/// Disposes of the Packet's BinaryWriter, BinaryReader, and MemoryStream.
+		/// Disposes of the packet's underlying writer, reader, and memory stream objects.
 		/// </summary>
 		public void Dispose()
 		{
