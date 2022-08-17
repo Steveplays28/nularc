@@ -12,8 +12,17 @@ namespace NExLib.Common
 		/// The header's length in bytes.
 		/// </summary>
 		public const int HeaderLength = 4;
+		/// <summary>
+		/// Used for writing to a packet.
+		/// </summary>
 		public BinaryWriter Writer;
+		/// <summary>
+		/// Used for reading a packet.
+		/// </summary>
 		public BinaryReader Reader;
+		/// <summary>
+		/// The packet's type, used to identify the packet.
+		/// </summary>
 		public readonly int Type;
 
 		private readonly MemoryStream memoryStream = new MemoryStream();
@@ -21,7 +30,7 @@ namespace NExLib.Common
 		/// <summary>
 		/// Creates a new empty packet, containing only the header.
 		/// </summary>
-		/// <param name="Type">The packet's type.</param>
+		/// <param name="type">The packet's type.</param>
 		public Packet(int type)
 		{
 			Writer = new BinaryWriter(memoryStream);
@@ -40,9 +49,11 @@ namespace NExLib.Common
 			Writer = new BinaryWriter(memoryStream);
 			Reader = new BinaryReader(memoryStream);
 
+			// TODO: Check if byteArray isn't null
 			Writer.Write(byteArray);
 			memoryStream.Position = 0;
 
+			// TODO: Check if header data is valid
 			Type = Reader.ReadInt32();
 		}
 

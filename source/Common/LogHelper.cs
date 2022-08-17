@@ -1,5 +1,7 @@
 namespace NExLib.Common
 {
+	// TODO: Improve and rename logger class, and rename types
+
 	/// <summary>
 	/// NExLib's helper class for logging.
 	/// </summary>
