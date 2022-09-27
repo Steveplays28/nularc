@@ -1,4 +1,4 @@
-namespace NExLib.Common
+namespace SteveNetworking.Common
 {
 	/// <summary>
 	/// The default built-in packet types, used by the library.

@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using NExLib.Common;
+using SteveNetworking.Common;
 
-namespace NExLib.Server
+namespace SteveNetworking.Server
 {
 	/// <summary>
 	/// UDP server which handles (multiple) connections to clients.
@@ -61,9 +61,9 @@ namespace NExLib.Server
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
-		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Server)]: ");
+		public readonly LogHelper LogHelper = new("[SteveNetworking (Server)]: ");
 
-		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new Dictionary<int, List<PacketReceivedEventHandler>>();
+		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
 		/// <summary>
 		/// Initialises the server.
@@ -201,33 +201,32 @@ namespace NExLib.Server
 					byte[] packetData = udpReceiveResult.Buffer;
 
 					// Create new packet object from the received packet data
-					using (Packet packet = new Packet(packetData))
+					using Packet packet = new(packetData);
+
+					// Check if packet contains header and data
+					if (packetData.Length <= 0)
 					{
-						// Check if packet contains header and data
-						if (packetData.Length <= 0)
+						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+					}
+					else if (packetData.Length < Packet.HeaderLength)
+					{
+						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+					}
+					else if (packetData.Length == Packet.HeaderLength)
+					{
+						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+					}
+
+					// Invoke packet received event
+					if (PacketReceived != null)
+					{
+						int? clientID = null;
+						if (ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
-						}
-						else if (packetData.Length < Packet.HeaderLength)
-						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
-						}
-						else if (packetData.Length == Packet.HeaderLength)
-						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+							clientID = ConnectedClientsIPToID[remoteIPEndPoint];
 						}
 
-						// Invoke packet received event
-						if (PacketReceived != null)
-						{
-							int? clientID = null;
-							if (ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
-							{
-								clientID = ConnectedClientsIPToID[remoteIPEndPoint];
-							}
-
-							PacketReceived.Invoke(packet, remoteIPEndPoint, clientID);
-						}
+						PacketReceived.Invoke(packet, remoteIPEndPoint, clientID);
 					}
 				}
 				catch (Exception e)
@@ -262,7 +261,7 @@ namespace NExLib.Server
 			ConnectedClientsIPToID.Add(IPEndPoint, (int)clientID);
 
 			// Send a packet back to the client
-			using (Packet newPacket = new Packet((int)DefaultPacketTypes.Connect))
+			using (Packet newPacket = new((int)DefaultPacketTypes.Connect))
 			{
 				// Write the client ID to the packet
 				newPacket.Writer.Write((int)clientID);

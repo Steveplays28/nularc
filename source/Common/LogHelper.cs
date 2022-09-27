@@ -1,9 +1,9 @@
-namespace NExLib.Common
+namespace SteveNetworking.Common
 {
 	// TODO: Improve and rename logger class, and rename types
 
 	/// <summary>
-	/// NExLib's helper class for logging.
+	/// SteveNetworking's helper class for logging.
 	/// </summary>
 	public class LogHelper
 	{

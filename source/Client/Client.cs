@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using NExLib.Common;
+using SteveNetworking.Common;
 
-namespace NExLib.Client
+namespace SteveNetworking.Client
 {
 	/// <summary>
 	/// UDP client which handles a connection to a server.
@@ -51,9 +51,9 @@ namespace NExLib.Client
 		/// <summary>
 		/// The client's logger.
 		/// </summary>
-		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
+		public readonly LogHelper LogHelper = new("[SteveNetworking (Client)]: ");
 
-		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new Dictionary<int, List<PacketReceivedEventHandler>>();
+		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
 		/// <summary>
 		/// Initialises the client.
@@ -137,11 +137,9 @@ namespace NExLib.Client
 			ServerIPEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
 
 			// Send connect packet
-			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
-			{
-				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
-			}
+			using Packet packet = new((int)DefaultPacketTypes.Connect);
+			SendPacket(packet);
+			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
 		}
 		/// <summary>
 		/// Connects to a server with the specified IP endpoint.
@@ -158,11 +156,9 @@ namespace NExLib.Client
 			ServerIPEndPoint = IPEndPoint;
 
 			// Send connect packet
-			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
-			{
-				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
-			}
+			using Packet packet = new((int)DefaultPacketTypes.Connect);
+			SendPacket(packet);
+			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
 		}
 
 		/// <summary>
@@ -177,11 +173,9 @@ namespace NExLib.Client
 			}
 
 			// Send disconnect packet
-			using (Packet packet = new Packet((int)DefaultPacketTypes.Disconnect))
-			{
-				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
-			}
+			using Packet packet = new((int)DefaultPacketTypes.Disconnect);
+			SendPacket(packet);
+			LogHelper.LogMessage(LogHelper.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
 		}
 
 		/// <summary>
@@ -251,27 +245,26 @@ namespace NExLib.Client
 					byte[] packetData = udpReceiveResult.Buffer;
 
 					// Create new packet object from the received packet data
-					using (Packet packet = new Packet(packetData))
-					{
-						// Check if packet contains header and data
-						if (packetData.Length <= 0)
-						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
-						}
-						else if (packetData.Length < Packet.HeaderLength)
-						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
-						}
-						else if (packetData.Length == Packet.HeaderLength)
-						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
-						}
+					using Packet packet = new(packetData);
 
-						// Invoke packet received event
-						if (PacketReceived != null)
-						{
-							PacketReceived.Invoke(packet);
-						}
+					// Check if packet contains header and data
+					if (packetData.Length <= 0)
+					{
+						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+					}
+					else if (packetData.Length < Packet.HeaderLength)
+					{
+						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+					}
+					else if (packetData.Length == Packet.HeaderLength)
+					{
+						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+					}
+
+					// Invoke packet received event
+					if (PacketReceived != null)
+					{
+						PacketReceived.Invoke(packet);
 					}
 				}
 				catch (Exception e)

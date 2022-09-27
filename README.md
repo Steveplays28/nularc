@@ -1,5 +1,5 @@
 <h1 align="center">
-NExLib
+SteveNetworking
 </h1>
 
 <div align="center">
@@ -18,29 +18,23 @@ Lightweight C# UDP networking library.
 ## Getting started
 
 ### Installation  
-Download the latest release DLL and add it to your `.csproj` file (inside the `<project>` tag):
+Download the latest release DLL and add the following to your `.csproj` file (inside the `<Project>` tag):
 ```
 <ItemGroup>
-    <Reference Include="NExLib">
-      <HintPath>libraries\\nexlib\nexlib.dll</HintPath>
-    </Reference>
+  <Reference Include="SteveNetworking">
+    <HintPath>common\libraries\steve-networking\steve-networking.dll</HintPath>
+  </Reference>
 </ItemGroup>
 ```
 
-Or clone a template repository:
+Or clone a template repository (out of date, will be refactored someday):
 - [Godot template project](https://github.com/Steveplays28/nexlib-godot-template)
-
-## FAQ
-
-**Q: What does the name stand for?**  
-A: A friend ([M1x3l](https://github.com/M1x3l)) suggested it to me, it stands for NetworkingExampleLibrary, since it's so simple. Haha
 
 ## Problems and suggestions  
 If you've found a problem or want to make a suggestions, feel free to [open an issue](https://github.com/Steveplays28/nexlib/issues/new)!
 
 Please check if there isn't already an issue open for your problem/suggestion.  
 I will respond as soon as I can.
-
 
 ## Contributing  
 If you want to add or change something, feel free to [make a pull request](https://github.com/Steveplays28/nexlib/compare)!
