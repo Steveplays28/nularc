@@ -73,7 +73,7 @@ namespace NExLib.Server
 			PacketReceived += OnPacketReceived;
 
 			Listen((int)DefaultPacketTypes.Connect, OnConnect);
-			Listen((int)DefaultPacketTypes.Connect, OnDisconnect);
+			Listen((int)DefaultPacketTypes.Disconnect, OnDisconnect);
 		}
 
 		/// <summary>
