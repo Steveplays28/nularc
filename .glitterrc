@@ -1,0 +1,26 @@
+{
+	"commit_message": "$1: $2: $3+",
+	"commit_message_arguments": [
+		{
+			"argument": 1,
+			"case": "lower",
+			"type_enums": [
+				"chore",
+				"feat",
+				"fix",
+				"perf"
+			]
+		},
+		{
+			"argument": 2,
+			"case": "lower",
+			"type_enums": [
+				"ci",
+				"docs",
+				"client",
+				"common",
+				"server"
+			]
+		}
+	]
+}
