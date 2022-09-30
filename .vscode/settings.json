@@ -1,0 +1,8 @@
+{
+	"conventionalCommits.scopes": [
+		"ci",
+		"docs",
+		"client",
+		"server"
+	]
+}
