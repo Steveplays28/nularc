@@ -3,7 +3,7 @@
     <metadata>
         <id>steve-networking</id>
         <version>0.3.1</version>
-        <description>Minimalistic UDP networking library.</description>
+        <description>Lightweight C# UDP networking library.</description>
         <authors>Steveplays</authors>
         <license type="expression">LGPL-2.1-only</license>
     </metadata>
