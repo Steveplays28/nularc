@@ -63,7 +63,7 @@ namespace SteveNetworking.Client
 			PacketReceived += OnPacketReceived;
 
 			Listen((int)DefaultPacketTypes.Connect, OnConnected);
-			Listen((int)DefaultPacketTypes.Connect, OnDisconnected);
+			Listen((int)DefaultPacketTypes.Disconnect, OnDisconnected);
 		}
 
 		/// <summary>
@@ -244,21 +244,24 @@ namespace SteveNetworking.Client
 					UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
 					byte[] packetData = udpReceiveResult.Buffer;
 
-					// Create new packet object from the received packet data
+					// Create a new packet object from the received packet data
 					using Packet packet = new(packetData);
 
-					// Check if packet contains header and data
-					if (packetData.Length <= 0)
+					// Check if the packet is a user defined packet, and if so, contains a header and data
+					if (packet.Type >= 0)
 					{
-						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
-					}
-					else if (packetData.Length < Packet.HeaderLength)
-					{
-						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
-					}
-					else if (packetData.Length == Packet.HeaderLength)
-					{
-						LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+						if (packetData.Length <= 0)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+						}
+						else if (packetData.Length < Packet.HeaderLength)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+						}
+						else if (packetData.Length == Packet.HeaderLength)
+						{
+							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+						}
 					}
 
 					// Invoke packet received event
