@@ -22,13 +22,20 @@ Download the latest release, extract it into your project, and add the following
 ```
 <ItemGroup>
   <Reference Include="SteveNetworking">
-    <HintPath>PATH\TO\steve-networking\steve-networking-VERSION.dll</HintPath>
+    <HintPath>PATH\TO\SteveNetworking\SteveNetworking.dll</HintPath>
   </Reference>
 </ItemGroup>
 ```
-<sup>Replace everything that's capitalised.</sup>
+<sup>Make sure to change the path to the location of the dll!</sup>
 
 This library works with any .NET 6 project. Specific support has been added for Godot 4.0.
+
+### Development
+```
+git clone https://github.com/Steveplays28/steve-networking.git
+cd steve-networking
+dotnet build
+```
 
 ## Problems and suggestions  
 If you've found a problem or want to make a suggestions, feel free to [open an issue](https://github.com/Steveplays28/nexlib/issues/new)!
