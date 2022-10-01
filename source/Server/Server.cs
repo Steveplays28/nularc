@@ -58,11 +58,10 @@ namespace SteveNetworking.Server
 		/// A dictionary containing all the saved clients, mapped as ID->IP
 		/// </summary>
 		public Dictionary<int, IPEndPoint> SavedClientsIDToIp { get; private set; } = new Dictionary<int, IPEndPoint>();
-
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
-		internal readonly Logger Logger = new("[SteveNetworking (Server)]: ");
+		public readonly Logger Logger = new("[SteveNetworking (Server)]: ");
 
 		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 

@@ -48,11 +48,10 @@ namespace SteveNetworking.Client
 		/// The ID of the client, used to identify the client.
 		/// </summary>
 		public int ClientId { get; private set; }
-
 		/// <summary>
 		/// The client's logger.
 		/// </summary>
-		internal readonly Logger Logger = new("[SteveNetworking (Client)]: ");
+		public readonly Logger Logger = new("[SteveNetworking (Client)]: ");
 
 		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
