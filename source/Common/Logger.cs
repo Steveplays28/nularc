@@ -1,5 +1,7 @@
 #if GODOT
 using Godot;
+#elif UNITY_5_3_OR_NEWER
+using UnityEngine;
 #endif
 
 namespace SteveNetworking.Common
@@ -54,6 +56,8 @@ namespace SteveNetworking.Common
 
 #if GODOT
 			Log += OnLogGodot;
+#elif UNITY_5_3_OR_NEWER
+        	Log += OnLogUnity;
 #endif
 		}
 
@@ -85,6 +89,29 @@ namespace SteveNetworking.Common
 					break;
 				case LogLevel.Error:
 					GD.PushError(logMessage);
+					break;
+			}
+		}
+#endif
+
+#if UNITY_5_4_OR_NEWER
+		/// <summary>
+		/// Handles Unity logging.
+		/// </summary>
+		/// <param name="logLevel">The level of the log message.</param>
+		/// <param name="logMessage">The message that will get logged.</param>
+		private void OnLogUnity(LogLevel logLevel, string logMessage)
+		{
+			switch (logLevel)
+			{
+				case LogLevel.Info:
+					Debug.Log(logMessage);
+					break;
+				case LogLevel.Warning:
+					Debug.LogWarning(logMessage);
+					break;
+				case LogLevel.Error:
+					Debug.LogError(logMessage);
 					break;
 			}
 		}
