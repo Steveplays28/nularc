@@ -1,8 +1,7 @@
-<h1 align="center">
-SteveNetworking
-</h1>
-
 <div align="center">
+<img src="img/icon.png" alt="SteveNetworking icon/logo" width="128"/>
+
+<h1>SteveNetworking</h1>
 
 [![GitHub](https://img.shields.io/github/license/Steveplays28/nexlib)](https://github.com/Steveplays28/nexlib/blob/main/LICENSE)
 ![GitHub](https://img.shields.io/github/repo-size/Steveplays28/nexlib)
@@ -27,7 +26,7 @@ Download the latest release, extract it into your project, and add the following
   </Reference>
 </ItemGroup>
 ```
-###### Replace everything that's capitalised.
+<sup>Replace everything that's capitalised.</sup>
 
 This library works with any .NET 6 project. Specific support has been added for Godot 4.0.
 
