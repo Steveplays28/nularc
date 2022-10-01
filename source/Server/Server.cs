@@ -58,10 +58,11 @@ namespace SteveNetworking.Server
 		/// A dictionary containing all the saved clients, mapped as ID->IP
 		/// </summary>
 		public Dictionary<int, IPEndPoint> SavedClientsIDToIp { get; private set; } = new Dictionary<int, IPEndPoint>();
+
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
-		public readonly LogHelper LogHelper = new("[SteveNetworking (Server)]: ");
+		internal readonly Logger Logger = new("[SteveNetworking (Server)]: ");
 
 		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
@@ -86,7 +87,7 @@ namespace SteveNetworking.Server
 			IPEndPoint = (IPEndPoint)UdpClient.Client.LocalEndPoint;
 
 			HasStarted = true;
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Server started successfully on {IPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Server started successfully on {IPEndPoint}.");
 		}
 
 		/// <summary>
@@ -98,7 +99,7 @@ namespace SteveNetworking.Server
 			{
 				if (IsStopping)
 				{
-					LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Failed stopping the server: the server is already trying to stop.");
+					Logger.LogMessage(Logger.LogLevel.Warning, $"Failed stopping the server: the server is already trying to stop.");
 					return;
 				}
 
@@ -110,11 +111,11 @@ namespace SteveNetworking.Server
 
 				HasStarted = false;
 				IsStopping = false;
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Server stopped successfully.");
+				Logger.LogMessage(Logger.LogLevel.Info, $"Server stopped successfully.");
 			}
 			catch (SocketException e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed stopping the server: {e}");
+				Logger.LogMessage(Logger.LogLevel.Error, $"Failed stopping the server: {e}");
 			}
 		}
 
@@ -208,15 +209,15 @@ namespace SteveNetworking.Server
 					{
 						if (packetData.Length <= 0)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
 						}
 						else if (packetData.Length < Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
 						}
 						else if (packetData.Length == Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
 						}
 					}
 
@@ -235,7 +236,7 @@ namespace SteveNetworking.Server
 				catch (Exception e)
 				{
 					// TODO: Improve packet receive failure log message
-					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed receiving a packet from a client: {e}");
+					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from a client: {e}");
 				}
 			}
 		}
@@ -254,7 +255,7 @@ namespace SteveNetworking.Server
 			if (ConnectedClientsIDToIP.ContainsValue(IPEndPoint))
 			{
 				int alreadyConnectedClientID = ConnectedClientsIPToID[IPEndPoint];
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({IPEndPoint}) failed to connect: already connected.");
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({IPEndPoint}) failed to connect: already connected.");
 				return;
 			}
 
@@ -272,7 +273,7 @@ namespace SteveNetworking.Server
 				SendPacket(newPacket, (int)clientID);
 			}
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully connected.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully connected.");
 		}
 
 		private void OnDisconnect(Packet packet, IPEndPoint IPEndPoint, int? clientID)
@@ -281,7 +282,7 @@ namespace SteveNetworking.Server
 			// Check if client is already disconnected
 			if (!ConnectedClientsIDToIP.ContainsValue(IPEndPoint))
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client {clientID} ({IPEndPoint}) failed to disconnect: already disconnected.");
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {clientID} ({IPEndPoint}) failed to disconnect: already disconnected.");
 				return;
 			}
 
@@ -289,7 +290,7 @@ namespace SteveNetworking.Server
 			ConnectedClientsIDToIP.Remove(ConnectedClientsIPToID[IPEndPoint]);
 			ConnectedClientsIPToID.Remove(IPEndPoint);
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully disconnected.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully disconnected.");
 		}
 	}
 }

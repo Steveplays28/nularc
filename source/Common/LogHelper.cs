@@ -9,7 +9,7 @@ namespace SteveNetworking.Common
 	/// <summary>
 	/// SteveNetworking's helper class for logging.
 	/// </summary>
-	internal class LogHelper
+	internal class Logger
 	{
 		/// <summary>
 		/// The log levels used by the logger.
@@ -45,10 +45,10 @@ namespace SteveNetworking.Common
 		public string Prefix;
 
 		/// <summary>
-		/// Creates a new instance of the <see cref="LogHelper"/> which the library will use to log messages.
+		/// Creates a new instance of the <see cref="Logger"/> which the library will use to log messages.
 		/// </summary>
 		/// <param name="prefix">The text that will be prefixed to every log message.</param>
-		public LogHelper(string prefix)
+		public Logger(string prefix)
 		{
 			Prefix = prefix;
 

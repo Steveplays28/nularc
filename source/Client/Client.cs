@@ -48,10 +48,11 @@ namespace SteveNetworking.Client
 		/// The ID of the client, used to identify the client.
 		/// </summary>
 		public int ClientId { get; private set; }
+
 		/// <summary>
 		/// The client's logger.
 		/// </summary>
-		public readonly LogHelper LogHelper = new("[SteveNetworking (Client)]: ");
+		internal readonly Logger Logger = new("[SteveNetworking (Client)]: ");
 
 		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
@@ -73,7 +74,7 @@ namespace SteveNetworking.Client
 		{
 			if (HasStarted)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
+				Logger.LogMessage(Logger.LogLevel.Error, "Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
 				return;
 			}
 
@@ -90,12 +91,12 @@ namespace SteveNetworking.Client
 		{
 			if (UdpClient == null)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed closing the UDP client: the UDP client is null.");
+				Logger.LogMessage(Logger.LogLevel.Error, "Failed closing the UDP client: the UDP client is null.");
 				return;
 			}
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
+				Logger.LogMessage(Logger.LogLevel.Error, "Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
 				return;
 			}
 
@@ -105,11 +106,11 @@ namespace SteveNetworking.Client
 				IPEndPoint = null;
 
 				HasStarted = false;
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UDP client.");
+				Logger.LogMessage(Logger.LogLevel.Info, "Successfully closed the UDP client.");
 			}
 			catch (SocketException e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UDP client: {e}");
+				Logger.LogMessage(Logger.LogLevel.Error, $"Failed closing the UDP client: {e}");
 			}
 		}
 
@@ -130,7 +131,7 @@ namespace SteveNetworking.Client
 		{
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
 				return;
 			}
 
@@ -139,7 +140,7 @@ namespace SteveNetworking.Client
 			// Send connect packet
 			using Packet packet = new((int)DefaultPacketTypes.Connect);
 			SendPacket(packet);
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
 		}
 		/// <summary>
 		/// Connects to a server with the specified IP endpoint.
@@ -149,7 +150,7 @@ namespace SteveNetworking.Client
 		{
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
 				return;
 			}
 
@@ -158,7 +159,7 @@ namespace SteveNetworking.Client
 			// Send connect packet
 			using Packet packet = new((int)DefaultPacketTypes.Connect);
 			SendPacket(packet);
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
 		}
 
 		/// <summary>
@@ -168,14 +169,14 @@ namespace SteveNetworking.Client
 		{
 			if (!IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
 				return;
 			}
 
 			// Send disconnect packet
 			using Packet packet = new((int)DefaultPacketTypes.Disconnect);
 			SendPacket(packet);
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
 		}
 
 		/// <summary>
@@ -208,7 +209,7 @@ namespace SteveNetworking.Client
 		{
 			if (!IsConnected && packet.Type != (int)DefaultPacketTypes.Connect)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Failed sending a packet of type {packet.Type} to the server: not connected to a server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Failed sending a packet of type {packet.Type} to the server: not connected to a server.");
 				return;
 			}
 
@@ -222,7 +223,7 @@ namespace SteveNetworking.Client
 			}
 			catch (Exception e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed sending a packet of type {packet.Type} to the server: {e}");
+				Logger.LogMessage(Logger.LogLevel.Error, $"Failed sending a packet of type {packet.Type} to the server: {e}");
 			}
 		}
 
@@ -252,15 +253,15 @@ namespace SteveNetworking.Client
 					{
 						if (packetData.Length <= 0)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
 						}
 						else if (packetData.Length < Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
 						}
 						else if (packetData.Length == Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
 						}
 					}
 
@@ -273,7 +274,7 @@ namespace SteveNetworking.Client
 				catch (Exception e)
 				{
 					// TODO: Improve packet receive failure log message
-					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed receiving a packet from the server: {e}");
+					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from the server: {e}");
 				}
 			}
 		}
@@ -291,7 +292,7 @@ namespace SteveNetworking.Client
 			IsConnected = true;
 			ClientId = packet.Reader.ReadInt32();
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Successfully connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Successfully connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
 		}
 
 		private void OnDisconnected(Packet packet)
@@ -302,7 +303,7 @@ namespace SteveNetworking.Client
 			ServerIPEndPoint = null;
 			ClientId = 0;
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Successfully disconnected from server {serverIPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Successfully disconnected from server {serverIPEndPoint}.");
 		}
 	}
 }
