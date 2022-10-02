@@ -4,7 +4,7 @@ namespace SteveNetworking.Common
 	/// The default built-in packet types, used by the library.
 	/// The enum values start at -1, and count down, thus not conflicting with user defined packet types.
 	/// </summary>
-	public enum DefaultPacketTypes
+	internal enum DefaultPacketTypes
 	{
 		/// <summary>
 		/// Used for sending connect request/confirmation packets.
