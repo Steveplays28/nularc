@@ -16,10 +16,9 @@ Lightweight C# UDP networking library.
 </div>
 
 ## Getting started
-
 ### Installation  
 Download the latest release, extract it into your project, and add the following to your `.csproj` file (inside the `<Project>` tag):
-```
+```cs
 <ItemGroup>
   <Reference Include="SteveNetworking">
     <HintPath>PATH\TO\SteveNetworking\SteveNetworking.dll</HintPath>
@@ -28,7 +27,127 @@ Download the latest release, extract it into your project, and add the following
 ```
 <sup>Make sure to change the path to the location of the dll!</sup>
 
-This library works with any .NET 6 project. Specific support has been added for Godot 4.0.
+This library works with any .NET 6 project.  
+Example code (made for Godot 4.0):
+```cs
+using System.Linq;
+using Godot;
+using SteveNetworking.Client;
+using SteveNetworking.Common;
+using SteveNetworking.Server;
+
+public partial class NetworkManager : Node
+{
+	public string IP { get; private set; } = "127.0.0.1";
+	public int Port { get; private set; } = 23375;
+	public Client Client { get; private set; }
+	public Server Server { get; private set; }
+
+	public override void _Ready()
+	{
+		if (OS.GetCmdlineArgs().Contains("--dedicated"))
+		{
+			StartServer();
+		}
+		else if (OS.GetCmdlineArgs().Contains("--integrated"))
+		{
+			StartServer();
+			StartClient();
+		}
+		else
+		{
+			StartClient();
+		}
+	}
+
+	public override void _PhysicsProcess(double delta)
+	{
+		if (Server != null)
+		{
+			Server.Tick();
+		}
+		if (Client != null)
+		{
+			Client.Tick();
+		}
+	}
+
+	public void StartServer()
+	{
+		Server = new();
+		Server.Logger.Log += OnLog;
+		Server.Start(Port);
+	}
+
+	public void StartClient()
+	{
+		Client = new();
+		Client.Logger.Log += OnLog;
+		Client.Start();
+		Client.Connect(IP, Port);
+	}
+
+	private void OnLog(Logger.LogLevel logLevel, string logMessage)
+	{
+		if (logLevel == Logger.LogLevel.Info)
+		{
+			GD.Print(logMessage);
+		}
+		else if (logLevel == Logger.LogLevel.Warning)
+		{
+			GD.PushWarning(logMessage);
+		}
+		else if (logLevel == Logger.LogLevel.Error)
+		{
+			GD.PushError(logMessage);
+		}
+	}
+}
+```
+You need to call the server/client's tick function on a set interval, so it can receive packets.
+You also need to subscribe to the `Logger.Log` event with your own method to receive logs.
+
+#### Declaring new packet types
+```cs
+public enum PacketTypes
+{
+	Input,
+	Test
+}
+```
+<sup>It's as simple as that to define new packet types.</sup>
+
+#### Sending packets
+```cs
+// Create a new test packet and write to it
+Packet packet = new Packet((int)PacketTypes.Test);
+packet.Writer.Write("test");
+
+// Send packet to all clients
+Server.SendPacketToAll(packet);
+
+// Send packet to specific client
+Server.SendPacket(packet, clientID)
+
+// Send packet to server
+Client.SendPacket(packet)
+```
+
+#### Receiving packets
+```cs
+// Listen for connect packet
+Server.Listen(DefaultPacketTypes.Connect, OnConnected)
+Client.Listen(DefaultPacketTypes.Connect, OnConnected)
+
+// Called after client has successfully connected
+public void OnConnectPacketReceived(Packet packet, IPEndPoint IPEndPoint, int? clientID) {
+	// Code goes here
+
+	// packet is the raw packet data. Only touch this if you know what you're doing, normally you shouldn't need to use this.
+	// clientID is the ID that this client got assigned. It should never be null, please send a bug report if this happens.
+	// IPEndPoint is the IP address of the client/server, depending on who listened for the packet.
+}
+```
 
 ### Development
 ```
