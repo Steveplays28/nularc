@@ -20,8 +20,8 @@ namespace SteveNetworking.Client
 		/// Event handler for when a client has successfully (dis)connected.
 		/// </summary>
 		/// <param name="ipEndPoint">The IP endpoint of the client that has successfully (dis)connected.</param>
-		/// <param name="ClientID">The ID of the client that has successfully (dis)connected.</param>
-		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int ClientID);
+		/// <param name="clientID">The ID of the client that has successfully (dis)connected.</param>
+		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int clientID);
 		/// <summary>
 		/// Event that gets called when a client has successfully connected.
 		/// </summary>
