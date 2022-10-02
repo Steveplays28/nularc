@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>SteveNetworking</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>SteveNetworking</PackageId>
+    <Version>0.3.1</Version>
+    <Authors>Steveplays</Authors>
+  </PropertyGroup>
+</Project>

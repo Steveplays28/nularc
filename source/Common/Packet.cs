@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace NExLib.Common
+namespace SteveNetworking.Common
 {
 	/// <summary>
 	/// Writeable/readable packet.
@@ -25,7 +25,7 @@ namespace NExLib.Common
 		/// </summary>
 		public readonly int Type;
 
-		private readonly MemoryStream memoryStream = new MemoryStream();
+		private readonly MemoryStream memoryStream = new();
 
 		/// <summary>
 		/// Creates a new empty packet, containing only the header.

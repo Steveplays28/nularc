@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using NExLib.Common;
+using SteveNetworking.Common;
 
-namespace NExLib.Server
+namespace SteveNetworking.Server
 {
 	/// <summary>
 	/// UDP server which handles (multiple) connections to clients.
@@ -61,9 +61,9 @@ namespace NExLib.Server
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
-		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Server)]: ");
+		public readonly Logger Logger = new("[SteveNetworking (Server)]: ");
 
-		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new Dictionary<int, List<PacketReceivedEventHandler>>();
+		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
 		/// <summary>
 		/// Initialises the server.
@@ -86,7 +86,7 @@ namespace NExLib.Server
 			IPEndPoint = (IPEndPoint)UdpClient.Client.LocalEndPoint;
 
 			HasStarted = true;
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Server started successfully on {IPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Server started successfully on {IPEndPoint}.");
 		}
 
 		/// <summary>
@@ -98,7 +98,7 @@ namespace NExLib.Server
 			{
 				if (IsStopping)
 				{
-					LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Failed stopping the server: the server is already trying to stop.");
+					Logger.LogMessage(Logger.LogLevel.Warning, $"Failed stopping the server: the server is already trying to stop.");
 					return;
 				}
 
@@ -110,11 +110,11 @@ namespace NExLib.Server
 
 				HasStarted = false;
 				IsStopping = false;
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Server stopped successfully.");
+				Logger.LogMessage(Logger.LogLevel.Info, $"Server stopped successfully.");
 			}
 			catch (SocketException e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed stopping the server: {e}");
+				Logger.LogMessage(Logger.LogLevel.Error, $"Failed stopping the server: {e}");
 			}
 		}
 
@@ -201,39 +201,41 @@ namespace NExLib.Server
 					byte[] packetData = udpReceiveResult.Buffer;
 
 					// Create new packet object from the received packet data
-					using (Packet packet = new Packet(packetData))
+					using Packet packet = new(packetData);
+
+					// Check if the packet is a user defined packet, and if so, contains a header and data
+					if (packet.Type >= 0)
 					{
-						// Check if packet contains header and data
 						if (packetData.Length <= 0)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
 						}
 						else if (packetData.Length < Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
 						}
 						else if (packetData.Length == Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
 						}
+					}
 
-						// Invoke packet received event
-						if (PacketReceived != null)
+					// Invoke packet received event
+					if (PacketReceived != null)
+					{
+						int? clientID = null;
+						if (ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
 						{
-							int? clientID = null;
-							if (ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
-							{
-								clientID = ConnectedClientsIPToID[remoteIPEndPoint];
-							}
-
-							PacketReceived.Invoke(packet, remoteIPEndPoint, clientID);
+							clientID = ConnectedClientsIPToID[remoteIPEndPoint];
 						}
+
+						PacketReceived.Invoke(packet, remoteIPEndPoint, clientID);
 					}
 				}
 				catch (Exception e)
 				{
 					// TODO: Improve packet receive failure log message
-					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed receiving a packet from a client: {e}");
+					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from a client: {e}");
 				}
 			}
 		}
@@ -252,7 +254,7 @@ namespace NExLib.Server
 			if (ConnectedClientsIDToIP.ContainsValue(IPEndPoint))
 			{
 				int alreadyConnectedClientID = ConnectedClientsIPToID[IPEndPoint];
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({IPEndPoint}) failed to connect: already connected.");
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({IPEndPoint}) failed to connect: already connected.");
 				return;
 			}
 
@@ -262,7 +264,7 @@ namespace NExLib.Server
 			ConnectedClientsIPToID.Add(IPEndPoint, (int)clientID);
 
 			// Send a packet back to the client
-			using (Packet newPacket = new Packet((int)DefaultPacketTypes.Connect))
+			using (Packet newPacket = new((int)DefaultPacketTypes.Connect))
 			{
 				// Write the client ID to the packet
 				newPacket.Writer.Write((int)clientID);
@@ -270,7 +272,7 @@ namespace NExLib.Server
 				SendPacket(newPacket, (int)clientID);
 			}
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully connected.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully connected.");
 		}
 
 		private void OnDisconnect(Packet packet, IPEndPoint IPEndPoint, int? clientID)
@@ -279,7 +281,7 @@ namespace NExLib.Server
 			// Check if client is already disconnected
 			if (!ConnectedClientsIDToIP.ContainsValue(IPEndPoint))
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Client {clientID} ({IPEndPoint}) failed to disconnect: already disconnected.");
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {clientID} ({IPEndPoint}) failed to disconnect: already disconnected.");
 				return;
 			}
 
@@ -287,7 +289,7 @@ namespace NExLib.Server
 			ConnectedClientsIDToIP.Remove(ConnectedClientsIPToID[IPEndPoint]);
 			ConnectedClientsIPToID.Remove(IPEndPoint);
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully disconnected.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully disconnected.");
 		}
 	}
 }

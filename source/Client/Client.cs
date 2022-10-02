@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using NExLib.Common;
+using SteveNetworking.Common;
 
-namespace NExLib.Client
+namespace SteveNetworking.Client
 {
 	/// <summary>
 	/// UDP client which handles a connection to a server.
@@ -51,9 +51,9 @@ namespace NExLib.Client
 		/// <summary>
 		/// The client's logger.
 		/// </summary>
-		public readonly LogHelper LogHelper = new LogHelper("[NExLib (Client)]: ");
+		public readonly Logger Logger = new("[SteveNetworking (Client)]: ");
 
-		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new Dictionary<int, List<PacketReceivedEventHandler>>();
+		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
 		/// <summary>
 		/// Initialises the client.
@@ -63,7 +63,7 @@ namespace NExLib.Client
 			PacketReceived += OnPacketReceived;
 
 			Listen((int)DefaultPacketTypes.Connect, OnConnected);
-			Listen((int)DefaultPacketTypes.Connect, OnDisconnected);
+			Listen((int)DefaultPacketTypes.Disconnect, OnDisconnected);
 		}
 
 		/// <summary>
@@ -73,7 +73,7 @@ namespace NExLib.Client
 		{
 			if (HasStarted)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
+				Logger.LogMessage(Logger.LogLevel.Error, "Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
 				return;
 			}
 
@@ -90,12 +90,12 @@ namespace NExLib.Client
 		{
 			if (UdpClient == null)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed closing the UDP client: the UDP client is null.");
+				Logger.LogMessage(Logger.LogLevel.Error, "Failed closing the UDP client: the UDP client is null.");
 				return;
 			}
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, "Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
+				Logger.LogMessage(Logger.LogLevel.Error, "Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
 				return;
 			}
 
@@ -105,11 +105,11 @@ namespace NExLib.Client
 				IPEndPoint = null;
 
 				HasStarted = false;
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Successfully closed the UDP client.");
+				Logger.LogMessage(Logger.LogLevel.Info, "Successfully closed the UDP client.");
 			}
 			catch (SocketException e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed closing the UDP client: {e}");
+				Logger.LogMessage(Logger.LogLevel.Error, $"Failed closing the UDP client: {e}");
 			}
 		}
 
@@ -130,18 +130,16 @@ namespace NExLib.Client
 		{
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
 				return;
 			}
 
 			ServerIPEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
 
 			// Send connect packet
-			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
-			{
-				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
-			}
+			using Packet packet = new((int)DefaultPacketTypes.Connect);
+			SendPacket(packet);
+			Logger.LogMessage(Logger.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
 		}
 		/// <summary>
 		/// Connects to a server with the specified IP endpoint.
@@ -151,18 +149,16 @@ namespace NExLib.Client
 		{
 			if (IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
 				return;
 			}
 
 			ServerIPEndPoint = IPEndPoint;
 
 			// Send connect packet
-			using (Packet packet = new Packet((int)DefaultPacketTypes.Connect))
-			{
-				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
-			}
+			using Packet packet = new((int)DefaultPacketTypes.Connect);
+			SendPacket(packet);
+			Logger.LogMessage(Logger.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
 		}
 
 		/// <summary>
@@ -172,16 +168,14 @@ namespace NExLib.Client
 		{
 			if (!IsConnected)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
 				return;
 			}
 
 			// Send disconnect packet
-			using (Packet packet = new Packet((int)DefaultPacketTypes.Disconnect))
-			{
-				SendPacket(packet);
-				LogHelper.LogMessage(LogHelper.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
-			}
+			using Packet packet = new((int)DefaultPacketTypes.Disconnect);
+			SendPacket(packet);
+			Logger.LogMessage(Logger.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
 		}
 
 		/// <summary>
@@ -214,7 +208,7 @@ namespace NExLib.Client
 		{
 			if (!IsConnected && packet.Type != (int)DefaultPacketTypes.Connect)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Failed sending a packet of type {packet.Type} to the server: not connected to a server.");
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Failed sending a packet of type {packet.Type} to the server: not connected to a server.");
 				return;
 			}
 
@@ -228,7 +222,7 @@ namespace NExLib.Client
 			}
 			catch (Exception e)
 			{
-				LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed sending a packet of type {packet.Type} to the server: {e}");
+				Logger.LogMessage(Logger.LogLevel.Error, $"Failed sending a packet of type {packet.Type} to the server: {e}");
 			}
 		}
 
@@ -250,34 +244,36 @@ namespace NExLib.Client
 					UdpReceiveResult udpReceiveResult = await UdpClient.ReceiveAsync();
 					byte[] packetData = udpReceiveResult.Buffer;
 
-					// Create new packet object from the received packet data
-					using (Packet packet = new Packet(packetData))
+					// Create a new packet object from the received packet data
+					using Packet packet = new(packetData);
+
+					// Check if the packet is a user defined packet, and if so, contains a header and data
+					if (packet.Type >= 0)
 					{
-						// Check if packet contains header and data
 						if (packetData.Length <= 0)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
 						}
 						else if (packetData.Length < Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
 						}
 						else if (packetData.Length == Packet.HeaderLength)
 						{
-							LogHelper.LogMessage(LogHelper.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
+							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
 						}
+					}
 
-						// Invoke packet received event
-						if (PacketReceived != null)
-						{
-							PacketReceived.Invoke(packet);
-						}
+					// Invoke packet received event
+					if (PacketReceived != null)
+					{
+						PacketReceived.Invoke(packet);
 					}
 				}
 				catch (Exception e)
 				{
 					// TODO: Improve packet receive failure log message
-					LogHelper.LogMessage(LogHelper.LogLevel.Error, $"Failed receiving a packet from the server: {e}");
+					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from the server: {e}");
 				}
 			}
 		}
@@ -295,7 +291,7 @@ namespace NExLib.Client
 			IsConnected = true;
 			ClientId = packet.Reader.ReadInt32();
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Successfully connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Successfully connected to server {ServerIPEndPoint}, received client ID {ClientId}.");
 		}
 
 		private void OnDisconnected(Packet packet)
@@ -306,7 +302,7 @@ namespace NExLib.Client
 			ServerIPEndPoint = null;
 			ClientId = 0;
 
-			LogHelper.LogMessage(LogHelper.LogLevel.Info, $"Successfully disconnected from server {serverIPEndPoint}.");
+			Logger.LogMessage(Logger.LogLevel.Info, $"Successfully disconnected from server {serverIPEndPoint}.");
 		}
 	}
 }
