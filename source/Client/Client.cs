@@ -282,7 +282,7 @@ namespace SteveNetworking.Client
 							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
 						}
 					}
-					
+
 					// Invoke packet received event
 					PacketReceived?.Invoke(packet);
 				}
@@ -295,9 +295,12 @@ namespace SteveNetworking.Client
 
 		private void OnPacketReceived(Packet packet)
 		{
-			foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
+			if (PacketListeners.ContainsKey(packet.Type))
 			{
-				packetReceivedEventHandler.Invoke(packet);
+				foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
+				{
+					packetReceivedEventHandler.Invoke(packet);
+				}
 			}
 		}
 

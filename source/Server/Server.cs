@@ -251,9 +251,12 @@ namespace SteveNetworking.Server
 
 		private void OnPacketReceived(Packet packet, IPEndPoint ipEndPoint, int clientID)
 		{
-			foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
+			if (PacketListeners.ContainsKey(packet.Type))
 			{
-				packetReceivedEventHandler.Invoke(packet, ipEndPoint, clientID);
+				foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
+				{
+					packetReceivedEventHandler.Invoke(packet, ipEndPoint, clientID);
+				}
 			}
 		}
 
