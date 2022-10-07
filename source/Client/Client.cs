@@ -91,10 +91,11 @@ namespace SteveNetworking.Client
 				return;
 			}
 
-			UdpClient = new UdpClient();
+			UdpClient = new UdpClient(0);
 			IPEndPoint = (IPEndPoint)UdpClient.Client.LocalEndPoint;
 
 			HasStarted = true;
+			Logger.LogMessage(Logger.LogLevel.Info, $"Client started successfully on {IPEndPoint}.");
 		}
 
 		/// <summary>
