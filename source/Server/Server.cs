@@ -273,7 +273,7 @@ namespace SteveNetworking.Server
 			// Accept the client's connection request
 			int clientID = ConnectedClientsIDToIP.Count;
 			ConnectedClientsIDToIP.Add(clientID, ipEndPoint);
-			ConnectedClientsIPToID.Add(IPEndPoint, clientID);
+			ConnectedClientsIPToID.Add(ipEndPoint, clientID);
 
 			// Send a packet back to the client
 			using (Packet newPacket = new((int)DefaultPacketTypes.Connect))
