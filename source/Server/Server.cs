@@ -110,8 +110,8 @@ namespace SteveNetworking.Server
 				IsStopping = true;
 				UdpClient.Close();
 				IPEndPoint = null;
-				ConnectedClientsIDToIP = new Dictionary<int, IPEndPoint>();
-				ConnectedClientsIPToID = new Dictionary<IPEndPoint, int>();
+				ConnectedClientsIDToIP = new();
+				ConnectedClientsIPToID = new();
 
 				HasStarted = false;
 				IsStopping = false;
