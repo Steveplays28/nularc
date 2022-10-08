@@ -12,20 +12,26 @@ namespace SteveNetworking.Server
 	public class Server
 	{
 		/// <summary>
-		/// Maximum amount of packets that are processed per tick.
-		/// </summary>
-		public int MaxPacketsReceivedPerTick = 5;
-		/// <summary>
 		/// Event handler for when packets are received and processed.
 		/// </summary>
 		/// <param name="packet">The packet that was received.</param>
-		/// <param name="IPEndPoint">The IP endpoint of the client the packet was received from.</param>
-		/// <param name="clientID">The ID of the client the packet was received from. <see langword="null"/> if the client is being (dis)connected.</param>
-		public delegate void PacketReceivedEventHandler(Packet packet, IPEndPoint IPEndPoint, int? clientID);
+		/// <param name="ipEndPoint">The IP endpoint of the client the packet was received from.</param>
+		/// <param name="clientID">The ID of the client the packet was received from.</param>
+		public delegate void PacketReceivedEventHandler(Packet packet, IPEndPoint ipEndPoint, int clientID);
 		/// <summary>
-		/// Event that is called when packets get received and processed.
+		/// Event handler for when a client has successfully (dis)connected.
 		/// </summary>
-		public event PacketReceivedEventHandler PacketReceived;
+		/// <param name="ipEndPoint">The IP endpoint of the client that has successfully (dis)connected.</param>
+		/// <param name="clientID">The ID of the client that has successfully (dis)connected.</param>
+		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int clientID);
+		/// <summary>
+		/// Event that gets called when a client has successfully connected.
+		/// </summary>
+		public event ConnectedEventHandler ClientConnected;
+		/// <summary>
+		/// Event that gets called when a client has successfully disconnected.
+		/// </summary>
+		public event ConnectedEventHandler ClientDisconnected;
 		/// <summary>
 		/// The base UDP client class that is built on top of.
 		/// </summary>
@@ -43,6 +49,10 @@ namespace SteveNetworking.Server
 		/// </summary>
 		public bool IsStopping { get; private set; }
 		/// <summary>
+		/// Maximum amount of packets that are processed per tick.
+		/// </summary>
+		public int MaxPacketsReceivedPerTick = 5;
+		/// <summary>
 		/// A dictionary containing all the connected clients, mapped as IP->ID.
 		/// </summary>
 		public Dictionary<IPEndPoint, int> ConnectedClientsIPToID { get; private set; } = new Dictionary<IPEndPoint, int>();
@@ -51,18 +61,14 @@ namespace SteveNetworking.Server
 		/// </summary>
 		public Dictionary<int, IPEndPoint> ConnectedClientsIDToIP { get; private set; } = new Dictionary<int, IPEndPoint>();
 		/// <summary>
-		/// A dictionary containing all the saved clients, mapped as IP->ID
-		/// </summary>
-		public Dictionary<IPEndPoint, int> SavedClientsIpToID { get; private set; } = new Dictionary<IPEndPoint, int>();
-		/// <summary>
-		/// A dictionary containing all the saved clients, mapped as ID->IP
-		/// </summary>
-		public Dictionary<int, IPEndPoint> SavedClientsIDToIp { get; private set; } = new Dictionary<int, IPEndPoint>();
-		/// <summary>
 		/// The server's logger.
 		/// </summary>
 		public readonly Logger Logger = new("[SteveNetworking (Server)]: ");
 
+		/// <summary>
+		/// Event that is called when a packet gets received and processed.
+		/// </summary>
+		private event PacketReceivedEventHandler PacketReceived;
 		private readonly Dictionary<int, List<PacketReceivedEventHandler>> PacketListeners = new();
 
 		/// <summary>
@@ -72,7 +78,6 @@ namespace SteveNetworking.Server
 		{
 			PacketReceived += OnPacketReceived;
 
-			Listen((int)DefaultPacketTypes.Connect, OnConnect);
 			Listen((int)DefaultPacketTypes.Disconnect, OnDisconnect);
 		}
 
@@ -105,8 +110,8 @@ namespace SteveNetworking.Server
 				IsStopping = true;
 				UdpClient.Close();
 				IPEndPoint = null;
-				ConnectedClientsIDToIP = new Dictionary<int, IPEndPoint>();
-				ConnectedClientsIPToID = new Dictionary<IPEndPoint, int>();
+				ConnectedClientsIDToIP = new();
+				ConnectedClientsIPToID = new();
 
 				HasStarted = false;
 				IsStopping = false;
@@ -220,62 +225,70 @@ namespace SteveNetworking.Server
 						}
 					}
 
-					// Invoke packet received event
-					if (PacketReceived != null)
+					// Check if the client that the packet was sent from is connected to the server
+					if (packet.Type == (int)DefaultPacketTypes.Connect && !ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
 					{
-						int? clientID = null;
-						if (ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
-						{
-							clientID = ConnectedClientsIPToID[remoteIPEndPoint];
-						}
-
-						PacketReceived.Invoke(packet, remoteIPEndPoint, clientID);
+						// Handle connection request
+						OnClientConnect(remoteIPEndPoint);
+					}
+					else if (packet.Type != (int)DefaultPacketTypes.Connect && !ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
+					{
+						Logger.LogMessage(Logger.LogLevel.Warning, $"Client {remoteIPEndPoint} tried to send a packet, but isn't connected to the server.");
+					}
+					else
+					{
+						// Invoke packet received event
+						int clientID = ConnectedClientsIPToID[remoteIPEndPoint];
+						PacketReceived?.Invoke(packet, remoteIPEndPoint, clientID);
 					}
 				}
 				catch (Exception e)
 				{
-					// TODO: Improve packet receive failure log message
 					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from a client: {e}");
 				}
 			}
 		}
 
-		private void OnPacketReceived(Packet packet, IPEndPoint IPEndPoint, int? clientID)
+		private void OnPacketReceived(Packet packet, IPEndPoint ipEndPoint, int clientID)
 		{
-			foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
+			if (PacketListeners.ContainsKey(packet.Type))
 			{
-				packetReceivedEventHandler.Invoke(packet, IPEndPoint, clientID);
+				foreach (PacketReceivedEventHandler packetReceivedEventHandler in PacketListeners[packet.Type])
+				{
+					packetReceivedEventHandler.Invoke(packet, ipEndPoint, clientID);
+				}
 			}
 		}
 
-		private void OnConnect(Packet packet, IPEndPoint IPEndPoint, int? clientID)
+		private void OnClientConnect(IPEndPoint ipEndPoint)
 		{
 			// Check if client is already connected
-			if (ConnectedClientsIDToIP.ContainsValue(IPEndPoint))
+			if (ConnectedClientsIDToIP.ContainsValue(ipEndPoint))
 			{
-				int alreadyConnectedClientID = ConnectedClientsIPToID[IPEndPoint];
-				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({IPEndPoint}) failed to connect: already connected.");
+				int alreadyConnectedClientID = ConnectedClientsIPToID[ipEndPoint];
+				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({ipEndPoint}) failed to connect: already connected.");
 				return;
 			}
 
 			// Accept the client's connection request
-			clientID = ConnectedClientsIDToIP.Count;
-			ConnectedClientsIDToIP.Add((int)clientID, IPEndPoint);
-			ConnectedClientsIPToID.Add(IPEndPoint, (int)clientID);
+			int clientID = ConnectedClientsIDToIP.Count;
+			ConnectedClientsIDToIP.Add(clientID, ipEndPoint);
+			ConnectedClientsIPToID.Add(ipEndPoint, clientID);
 
 			// Send a packet back to the client
 			using (Packet newPacket = new((int)DefaultPacketTypes.Connect))
 			{
 				// Write the client ID to the packet
-				newPacket.Writer.Write((int)clientID);
+				newPacket.Writer.Write(clientID);
 
-				SendPacket(newPacket, (int)clientID);
+				SendPacket(newPacket, clientID);
 			}
 
+			ClientConnected.Invoke(ipEndPoint, clientID);
 			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully connected.");
 		}
 
-		private void OnDisconnect(Packet packet, IPEndPoint IPEndPoint, int? clientID)
+		private void OnDisconnect(Packet packet, IPEndPoint ipEndPoint, int clientID)
 		{
 			// TODO: Improve checking of connected clients
 			// Check if client is already disconnected
@@ -289,6 +302,7 @@ namespace SteveNetworking.Server
 			ConnectedClientsIDToIP.Remove(ConnectedClientsIPToID[IPEndPoint]);
 			ConnectedClientsIPToID.Remove(IPEndPoint);
 
+			ClientDisconnected.Invoke(ipEndPoint, clientID);
 			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully disconnected.");
 		}
 	}
