@@ -1,5 +1,5 @@
 <div align="center">
-<img src="docs/icon.png" alt="SteveNetworking icon/logo" width="128"/>
+<img src="icon.png" alt="SteveNetworking icon/logo" width="128"/>
 
 <h1>SteveNetworking</h1>
 
@@ -25,7 +25,7 @@ Download the latest release, extract it into your project, and add the following
   </Reference>
 </ItemGroup>
 ```
-<sup>Make sure to change the path to the location of the dll!</sup>
+!> Make sure to change the path to the location of the dll!
 
 This library works with any .NET 6 project.  
 Example code (made for Godot 4.0):
