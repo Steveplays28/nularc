@@ -38,12 +38,17 @@
 			window.$docsify = {
 				name: 'SteveNetworking',
 				repo: 'Steveplays28/steve-networking',
-				themeColor: '#afd3fd',
+				themeColor: '#b4a0ee',
 				coverpage: true,
 				loadSidebar: true,
 				subMaxLevel: 2,
 				alias: {
 					'/.*/_sidebar.md': '/_sidebar.md',
+				},
+				auto2top: true,
+				notFoundPage: true,
+				notFoundPage: {
+					'/': '_404.md',
 				},
 			};
 		</script>
@@ -73,23 +78,5 @@
 
 		<!-- docsify-copy-code -->
 		<script src="https://unpkg.com/docsify-copy-code@2"></script>
-
-		<!-- giscus -->
-		<script
-			src="https://giscus.app/client.js"
-			data-repo="steveplays28/steve-networking"
-			data-repo-id="R_kgDOG8rSGQ"
-			data-category="giscus"
-			data-category-id="DIC_kwDOG8rSGc4CR-yQ"
-			data-mapping="pathname"
-			data-strict="0"
-			data-reactions-enabled="1"
-			data-emit-metadata="0"
-			data-input-position="top"
-			data-theme="preferred_color_scheme"
-			data-lang="en"
-			crossorigin="anonymous"
-			async
-		></script>
 	</body>
 </html>
