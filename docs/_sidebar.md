@@ -1,2 +1,2 @@
-* [Home](/README.md)
-* [Usage](pages/usage.md)
+* [Introduction](/README.md)
+* [Getting started](pages/getting-started.md)

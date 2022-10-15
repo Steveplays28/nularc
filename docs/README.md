@@ -15,6 +15,11 @@
 Lightweight C# UDP networking library.
 </div>
 
+## What is SteveNetworking?
+SteveNetworking is a lightweight UDP networking library, written in C# with .NET 6. It's designed to be as lightweight and easy to use as possible
+
+
+
 ## Getting started
 ### Installation  
 Download the latest release, extract it into your project, and add the following to your `.csproj` file (inside the `<Project>` tag):
