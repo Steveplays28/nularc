@@ -22,11 +22,29 @@ It will handle the basics of a server and a client for you, leaving the rest up 
 
 ## Development
 
+The following commands will clone the repository and build it using the .NET cli.
+
 ```bash
 git clone https://github.com/Steveplays28/steve-networking.git
 cd steve-networking
+
 dotnet build
 ```
+
+!> Make sure you have the [.NET 6 SDK](https://learn.microsoft.com/en-us/dotnet/core/install/windows?tabs=net60) installed (which comes with the [.NET cli](https://learn.microsoft.com/en-us/dotnet/core/tools/)) so you can test your changes.
+
+### Documentation
+
+If you want to edit the documentation, run the following commands to get a local copy of the repository up and running:
+
+```bash
+git clone https://github.com/Steveplays28/steve-networking.git
+cd steve-networking
+
+docsify serve ./docs
+```
+
+You can now preview the documentation at [localhost:3000](http://localhost:3000).
 
 ## Problems and suggestions  
 
