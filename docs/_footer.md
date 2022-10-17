@@ -1,2 +1,2 @@
 -----
-Made with ❤️ by Steveplays28
+Made with ❤️ by [Steveplays28](https://github.com/Steveplays28)

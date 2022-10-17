@@ -12,7 +12,7 @@
 [![Discord](https://img.shields.io/discord/746681304111906867?label=chat%20on%20Discord%20%7C%20Steve%27s%20underwater%20paradise)](https://discord.gg/KbWxgGg)
 [![Twitter](https://img.shields.io/twitter/follow/Steveplays28?label=Steveplays28%20%7C%20Followers)](https://twitter.com/Steveplays28)
 
-Lightweight C# UDP networking library.
+Lightweight UDP networking library, written in C# with .NET 6.
 </div>
 
 ## Getting started
