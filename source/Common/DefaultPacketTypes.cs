@@ -1,4 +1,4 @@
-namespace SteveNetworking.Common
+namespace Nularc.Common
 {
 	/// <summary>
 	/// The default built-in packet types, used by the library.

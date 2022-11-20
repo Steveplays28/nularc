@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using SteveNetworking.Common;
+using Nularc.Common;
 
-namespace SteveNetworking.Server
+namespace Nularc.Server
 {
 	/// <summary>
 	/// UDP server which handles (multiple) connections to clients.
@@ -63,7 +63,7 @@ namespace SteveNetworking.Server
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
-		public readonly Logger Logger = new("[SteveNetworking (Server)]: ");
+		public readonly Logger Logger = new("[Nularc (Server)]: ");
 
 		/// <summary>
 		/// Event that is called when a packet gets received and processed.

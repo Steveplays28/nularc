@@ -1,28 +1,17 @@
-# Getting started
+# Examples
 
-Download the latest release, extract it into your project, and add the following to your `.csproj` file (inside the `<Project>` tag):
-
-```cs
-<ItemGroup>
-  <Reference Include="SteveNetworking">
-    <HintPath>PATH\TO\SteveNetworking\SteveNetworking.dll</HintPath>
-  </Reference>
-</ItemGroup>
-```
-
-!> Make sure to change the path to the location of the dll!
-
-## Usage
+## Starting a server and a client
 
 <!-- tabs:start -->
-#### **Godot 4.0 beta 1**
+<!-- markdownlint-disable-next-line no-duplicate-header -->
+### **Godot 4**
 
 ```cs
 using System.Linq;
 using Godot;
-using SteveNetworking.Client;
-using SteveNetworking.Common;
-using SteveNetworking.Server;
+using Nularc.Client;
+using Nularc.Common;
+using Nularc.Server;
 
 public partial class NetworkManager : Node
 {
@@ -93,13 +82,6 @@ public partial class NetworkManager : Node
 }
 ```
 
-#### **Unity**
-
-```cs
-// TODO
-```
-<!-- tabs:end -->
-
 #### Declaring new packet types
 
 Create a new file `PacketTypes.cs` and add the following code to it:
@@ -111,16 +93,18 @@ public enum PacketTypes
  Test
 }
 ```
+<!-- tabs:end -->
 
 ## Sending packets
 
 <!-- tabs:start -->
-#### **Godot 4.0 beta 1**
+<!-- markdownlint-disable-next-line no-duplicate-header -->
+### **Godot 4**
 
 ```cs
 using Godot;
-using SteveNetworking.Client;
-using SteveNetworking.Server;
+using Nularc.Client;
+using Nularc.Server;
 
 public partial class NetworkManager : Node
 {
@@ -144,23 +128,18 @@ public partial class NetworkManager : Node
  // ...
 }
 ```
-
-#### **Unity**
-
-```cs
-// TODO
-```
 <!-- tabs:end -->
 
 ## Receiving packets
 
 <!-- tabs:start -->
-#### **Godot 4.0 beta 1**
+<!-- markdownlint-disable-next-line no-duplicate-header -->
+### **Godot 4**
 
 ```cs
 using Godot;
-using SteveNetworking.Client;
-using SteveNetworking.Server;
+using Nularc.Client;
+using Nularc.Server;
 
 public partial class NetworkManager : Node
 {
@@ -184,11 +163,5 @@ public partial class NetworkManager : Node
 
  // ...
 }
-```
-
-#### **Unity**
-
-```cs
-// TODO
 ```
 <!-- tabs:end -->

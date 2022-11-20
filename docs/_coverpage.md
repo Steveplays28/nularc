@@ -1,9 +1,11 @@
-![icon](icon.png ':size=256x256')
+<!-- markdownlint-disable link-fragments -->
+<!-- markdownlint-disable-next-line first-line-heading -->
+![Nularc icon](img/icon.png ':size=256x256')
 
-# SteveNetworking
+# Nularc
 
-Lightweight C# UDP networking library for .NET 6.
+Packet-based, lightweight C# UDP networking library.
 
-[GitHub](https://github.com/steveplays28/steve-networking)
-[Discord](https://discord.gg/KbWxgGg)
-[Documentation](/README)
+[GitHub](https://github.com/steveplays28/nularc)
+[NuGet](https://www.nuget.org/packages/Nularc)
+[Documentation](#introduction)
