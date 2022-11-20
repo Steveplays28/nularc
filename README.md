@@ -40,7 +40,7 @@ Download the [latest release](https://github.com/Steveplays28/nularc/releases/la
 </ItemGroup>
 ```
 
-!> Make sure to change the path to the location of the dll!
+> Make sure to change the path to the location of the dll!
 
 ## Contributing
 
