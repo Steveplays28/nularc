@@ -1,15 +1,10 @@
-<!-- markdownlint-disable-next-line first-line-heading -->
-![Nularc icon](docs/img/icon_128x128.png)
+# Introduction
 
-# Nularc
+> Nularc is a packet-based, lightweight C# UDP networking library.
 
-[![GitHub](https://img.shields.io/github/license/Steveplays28/nexlib)](https://github.com/Steveplays28/nexlib/blob/main/LICENSE)
-![GitHub](https://img.shields.io/github/repo-size/Steveplays28/nexlib)
-[![GitHub](https://img.shields.io/github/forks/Steveplays28/nexlib)](https://github.com/Steveplays28/nexlib/network/members)
-[![GitHub](https://img.shields.io/github/issues/Steveplays28/nexlib)](https://github.com/Steveplays28/nexlib/issues)
-[![GitHub](https://img.shields.io/github/issues-pr/Steveplays28/nexlib)](https://github.com/Steveplays28/nexlib/pulls)
+Nularc is designed to be as lightweight and easy to use as possible, so it will handle the basics of a server and a client for you, while leaving the rest up to you to develop and manage.
 
-Packet-based, lightweight C# UDP networking library.
+If you're wondering about the name, [Nuland](https://en.wikipedia.org/wiki/Nuland) is a place in the Netherlands. Close enough?
 
 ## Installation
 

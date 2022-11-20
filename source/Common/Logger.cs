@@ -1,7 +1,7 @@
-namespace SteveNetworking.Common
+namespace Nularc.Common
 {
 	/// <summary>
-	/// SteveNetworking's helper class for logging.
+	/// Nularc's helper class for logging.
 	/// </summary>
 	public class Logger
 	{

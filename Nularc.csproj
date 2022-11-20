@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>SteveNetworking</RootNamespace>
+    <RootNamespace>Nularc</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PackageId>SteveNetworking</PackageId>
-    <Version>1.1.0</Version>
+    <PackageId>nularc</PackageId>
+    <Version>1.2.0</Version>
     <Authors>Steveplays</Authors>
+    <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

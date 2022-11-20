@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace SteveNetworking.Common
+namespace Nularc.Common
 {
 	/// <summary>
 	/// Writeable/readable packet.
