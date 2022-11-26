@@ -210,23 +210,6 @@ namespace Nularc.Server
 					// Create new packet object from the received packet data
 					using Packet packet = new(packetData);
 
-					// Check if the packet is a user defined packet, and if so, contains a header and data
-					if (packet.Type >= 0)
-					{
-						if (packetData.Length <= 0)
-						{
-							Logger.LogWarning("Received an empty packet of type {packet.Type} (header and data missing).", packet.Type);
-						}
-						else if (packetData.Length < Packet.HeaderLength)
-						{
-							Logger.LogWarning("Received an empty packet of type {packet.Type} (header incomplete and data missing).", packet.Type);
-						}
-						else if (packetData.Length == Packet.HeaderLength)
-						{
-							Logger.LogWarning("Received an empty packet of type {packet.Type} (data missing).", packet.Type);
-						}
-					}
-
 					// Check if the client that the packet was sent from is connected to the server
 					if (packet.Type == (int)DefaultPacketTypes.Connect && !ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
 					{
@@ -244,9 +227,15 @@ namespace Nularc.Server
 						PacketReceived?.Invoke(packet, remoteIPEndPoint, clientID);
 					}
 				}
-				catch (Exception e)
+				catch (InvalidPacketHeaderException)
 				{
-					Logger.LogError("Failed receiving a packet from a client: {e}", e);
+					Logger.LogError("Received a packet with an invalid header.");
+					throw;
+				}
+				catch (Exception)
+				{
+					Logger.LogError("Failed receiving a packet from the server due to an exception.");
+					throw;
 				}
 			}
 		}
