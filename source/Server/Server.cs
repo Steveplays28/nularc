@@ -126,7 +126,7 @@ namespace Nularc.Server
 		}
 
 		/// <summary>
-		/// Should be ran every frame, put this in your app's main loop.
+		/// Should run every tick, put this in your app's (framerate independent) main loop.
 		/// </summary>
 		public void Tick()
 		{
