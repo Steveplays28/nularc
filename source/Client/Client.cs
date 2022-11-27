@@ -75,7 +75,7 @@ namespace Nularc.Client
 		/// </summary>
 		public Client(ILoggerFactory loggerFactory)
 		{
-			Logger = loggerFactory.CreateLogger("Client");
+			Logger = loggerFactory.CreateLogger("Nularc.Client");
 
 			PacketReceived += OnPacketReceived;
 			Listen((int)DefaultPacketTypes.Connect, OnConnected);
