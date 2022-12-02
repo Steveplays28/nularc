@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using Nularc.Common;
 
 namespace Nularc.Client
@@ -21,7 +22,7 @@ namespace Nularc.Client
 		/// </summary>
 		/// <param name="ipEndPoint">The IP endpoint of the client that has successfully (dis)connected.</param>
 		/// <param name="clientID">The ID of the client that has successfully (dis)connected.</param>
-		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int clientID);
+		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, Guid clientID);
 		/// <summary>
 		/// Event that gets called when a client has successfully connected.
 		/// </summary>
@@ -55,13 +56,13 @@ namespace Nularc.Client
 		/// </summary>
 		public int MaxPacketsReceivedPerTick = 5;
 		/// <summary>
-		/// The ID of the client, used to identify the client.
+		/// The ID of the client, used to identify the client. Set to <see cref="Guid.Empty"/> when the client is not connected to a server.
 		/// </summary>
-		public int ClientID { get; private set; }
+		public Guid ClientID { get; private set; } = Guid.Empty;
 		/// <summary>
 		/// The client's logger.
 		/// </summary>
-		public readonly Logger Logger = new("[Nularc (Client)]: ");
+		public readonly ILogger Logger;
 
 		/// <summary>
 		/// Event that is called when packets get received and processed.
@@ -72,10 +73,11 @@ namespace Nularc.Client
 		/// <summary>
 		/// Initialises the client.
 		/// </summary>
-		public Client()
+		public Client(ILoggerFactory loggerFactory)
 		{
-			PacketReceived += OnPacketReceived;
+			Logger = loggerFactory.CreateLogger("Nularc.Client");
 
+			PacketReceived += OnPacketReceived;
 			Listen((int)DefaultPacketTypes.Connect, OnConnected);
 			Listen((int)DefaultPacketTypes.Disconnect, OnDisconnected);
 		}
@@ -87,7 +89,7 @@ namespace Nularc.Client
 		{
 			if (HasStarted)
 			{
-				Logger.LogMessage(Logger.LogLevel.Error, "Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
+				Logger.LogError("Failed starting a new instance of the UDP client: the old UDP client hasn't been closed yet. Close the old UDP client before attempting to start a new UDP client.");
 				return;
 			}
 
@@ -95,7 +97,7 @@ namespace Nularc.Client
 			IPEndPoint = (IPEndPoint)UdpClient.Client.LocalEndPoint;
 
 			HasStarted = true;
-			Logger.LogMessage(Logger.LogLevel.Info, $"Client started successfully on {IPEndPoint}.");
+			Logger.LogInformation("Client started successfully on {IPEndPoint}.", IPEndPoint);
 		}
 
 		/// <summary>
@@ -105,12 +107,12 @@ namespace Nularc.Client
 		{
 			if (UdpClient == null)
 			{
-				Logger.LogMessage(Logger.LogLevel.Error, "Failed closing the UDP client: the UDP client is null.");
+				Logger.LogError("Failed closing the UDP client: the UDP client is null.");
 				return;
 			}
 			if (IsConnected)
 			{
-				Logger.LogMessage(Logger.LogLevel.Error, "Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
+				Logger.LogError("Failed closing the UDP client: the UDP client is still connected to a server. Disconnect from the server before trying to close the UDP client.");
 				return;
 			}
 
@@ -120,16 +122,16 @@ namespace Nularc.Client
 				IPEndPoint = null;
 
 				HasStarted = false;
-				Logger.LogMessage(Logger.LogLevel.Info, "Successfully closed the UDP client.");
+				Logger.LogInformation("Successfully closed the UDP client.");
 			}
 			catch (SocketException e)
 			{
-				Logger.LogMessage(Logger.LogLevel.Error, $"Failed closing the UDP client: {e}");
+				Logger.LogError("Failed closing the UDP client: {e}", e);
 			}
 		}
 
 		/// <summary>
-		/// Should be ran every frame, put this in your app's main loop.
+		/// Should run every tick, put this in your app's (framerate independent) main loop.
 		/// </summary>
 		public void Tick()
 		{
@@ -145,7 +147,7 @@ namespace Nularc.Client
 		{
 			if (IsConnected)
 			{
-				Logger.LogMessage(Logger.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
+				Logger.LogWarning("Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
 				return;
 			}
 
@@ -154,7 +156,7 @@ namespace Nularc.Client
 			// Send connect packet
 			using Packet packet = new((int)DefaultPacketTypes.Connect);
 			SendPacket(packet);
-			Logger.LogMessage(Logger.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
+			Logger.LogInformation("Connecting to server {ServerIPEndPoint}.", ServerIPEndPoint);
 		}
 		/// <summary>
 		/// Connects to a server with the specified IP endpoint.
@@ -164,7 +166,7 @@ namespace Nularc.Client
 		{
 			if (IsConnected)
 			{
-				Logger.LogMessage(Logger.LogLevel.Warning, "Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
+				Logger.LogWarning("Failed connecting to the server: already connected to a server. Disconnect from the currently connected server to connect to a different server.");
 				return;
 			}
 
@@ -173,7 +175,7 @@ namespace Nularc.Client
 			// Send connect packet
 			using Packet packet = new((int)DefaultPacketTypes.Connect);
 			SendPacket(packet);
-			Logger.LogMessage(Logger.LogLevel.Info, $"Connecting to server {ServerIPEndPoint}.");
+			Logger.LogInformation("Connecting to server {ServerIPEndPoint}.", ServerIPEndPoint);
 		}
 
 		/// <summary>
@@ -183,14 +185,14 @@ namespace Nularc.Client
 		{
 			if (!IsConnected)
 			{
-				Logger.LogMessage(Logger.LogLevel.Warning, "Failed disconnecting from the server: not connected to a server.");
+				Logger.LogWarning("Failed disconnecting from the server: not connected to a server.");
 				return;
 			}
 
 			// Send disconnect packet
 			using Packet packet = new((int)DefaultPacketTypes.Disconnect);
 			SendPacket(packet);
-			Logger.LogMessage(Logger.LogLevel.Info, "Disconnecting from server {ServerIPEndPoint}.");
+			Logger.LogInformation("Disconnecting from server {ServerIPEndPoint}.", ServerIPEndPoint);
 		}
 
 		/// <summary>
@@ -223,12 +225,12 @@ namespace Nularc.Client
 		{
 			if (!IsConnected && packet.Type != (int)DefaultPacketTypes.Connect)
 			{
-				Logger.LogMessage(Logger.LogLevel.Warning, $"Failed sending a packet of type {packet.Type} to the server: not connected to a server.");
+				Logger.LogWarning("Failed sending a packet of type {packet.Type} to the server: not connected to a server.", packet.Type);
 				return;
 			}
 			else if (IsConnected && packet.Type == (int)DefaultPacketTypes.Connect)
 			{
-				Logger.LogMessage(Logger.LogLevel.Warning, $"Failed sending a {packet.Type} packet to the server: already connected to a server.");
+				Logger.LogWarning("Failed sending a {packet.Type} packet to the server: already connected to a server.", packet.Type);
 				return;
 			}
 
@@ -242,7 +244,7 @@ namespace Nularc.Client
 			}
 			catch (Exception e)
 			{
-				Logger.LogMessage(Logger.LogLevel.Error, $"Failed sending a packet of type {packet.Type} to the server: {e}");
+				Logger.LogError("Failed sending a packet of type {packet.Type} to the server: {e}", packet.Type, e);
 			}
 		}
 
@@ -267,29 +269,18 @@ namespace Nularc.Client
 					// Create a new packet object from the received packet data
 					using Packet packet = new(packetData);
 
-					// Check if the packet is a user defined packet, and if so, contains a header and data
-					if (packet.Type >= 0)
-					{
-						if (packetData.Length <= 0)
-						{
-							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
-						}
-						else if (packetData.Length < Packet.HeaderLength)
-						{
-							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
-						}
-						else if (packetData.Length == Packet.HeaderLength)
-						{
-							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
-						}
-					}
-
 					// Invoke packet received event
 					PacketReceived?.Invoke(packet);
 				}
-				catch (Exception e)
+				catch (InvalidPacketHeaderException)
 				{
-					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from the server: {e}");
+					Logger.LogError("Received a packet with an invalid header.");
+					throw;
+				}
+				catch (Exception)
+				{
+					Logger.LogError("Failed receiving a packet from the server due to an exception.");
+					throw;
 				}
 			}
 		}
@@ -308,23 +299,23 @@ namespace Nularc.Client
 		private void OnConnected(Packet packet)
 		{
 			IsConnected = true;
-			ClientID = packet.Reader.ReadInt32();
+			ClientID = new Guid(packet.Reader.ReadBytes(16));
 
 			Connected.Invoke(ServerIPEndPoint, ClientID);
-			Logger.LogMessage(Logger.LogLevel.Info, $"Successfully connected to server {ServerIPEndPoint}, received client ID {ClientID}.");
+			Logger.LogInformation("Successfully connected to server {ServerIPEndPoint}, received client ID {ClientID}.", ServerIPEndPoint, ClientID);
 		}
 
 		private void OnDisconnected(Packet packet)
 		{
 			IPEndPoint serverIPEndPoint = ServerIPEndPoint;
-			int clientID = ClientID;
+			Guid clientID = ClientID;
 
 			IsConnected = false;
 			ServerIPEndPoint = null;
-			ClientID = -1;
+			ClientID = Guid.Empty;
 
 			Disconnected.Invoke(serverIPEndPoint, clientID);
-			Logger.LogMessage(Logger.LogLevel.Info, $"Successfully disconnected from server {serverIPEndPoint}.");
+			Logger.LogInformation("Successfully disconnected from server {serverIPEndPoint}.", serverIPEndPoint);
 		}
 	}
 }

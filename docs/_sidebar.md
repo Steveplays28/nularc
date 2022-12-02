@@ -1,6 +1,7 @@
 <!-- markdownlint-disable-next-line first-line-heading -->
 - [Introduction](/pages/introduction.md)
 - [Examples](/pages/examples.md)
+- [Logging](/pages/logging.md)
 - **Links**
 - [![GitHub icon](https://steveplays28.github.io/nularc/img/github.svg ':size=20x20')GitHub](https://github.com/Steveplays28/nularc)
 - [![NuGet icon](https://steveplays28.github.io/nularc/img/nuget.svg ':size=20x20')NuGet](https://www.nuget.org/packages/Nularc)

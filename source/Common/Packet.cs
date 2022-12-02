@@ -44,16 +44,21 @@ namespace Nularc.Common
 		/// Creates a new packet from a byte array containing a valid header and data.
 		/// </summary>
 		/// <param name="byteArray">The byte array to create the packet from.</param>
+		/// <exception cref="InvalidPacketHeaderException" />
+		/// <exception cref="EndOfStreamException" />
 		public Packet(byte[] byteArray)
 		{
+			if (byteArray.Length <= 0)
+			{
+				throw new InvalidPacketHeaderException();
+			}
+
 			Writer = new BinaryWriter(memoryStream);
 			Reader = new BinaryReader(memoryStream);
 
-			// TODO: Check if byteArray isn't null
 			Writer.Write(byteArray);
 			memoryStream.Position = 0;
 
-			// TODO: Check if header data is valid
 			Type = Reader.ReadInt32();
 		}
 

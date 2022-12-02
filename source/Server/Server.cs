@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
 using Nularc.Common;
 
 namespace Nularc.Server
@@ -17,13 +18,13 @@ namespace Nularc.Server
 		/// <param name="packet">The packet that was received.</param>
 		/// <param name="ipEndPoint">The IP endpoint of the client the packet was received from.</param>
 		/// <param name="clientID">The ID of the client the packet was received from.</param>
-		public delegate void PacketReceivedEventHandler(Packet packet, IPEndPoint ipEndPoint, int clientID);
+		public delegate void PacketReceivedEventHandler(Packet packet, IPEndPoint ipEndPoint, Guid clientID);
 		/// <summary>
 		/// Event handler for when a client has successfully (dis)connected.
 		/// </summary>
 		/// <param name="ipEndPoint">The IP endpoint of the client that has successfully (dis)connected.</param>
 		/// <param name="clientID">The ID of the client that has successfully (dis)connected.</param>
-		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int clientID);
+		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, Guid clientID);
 		/// <summary>
 		/// Event that gets called when a client has successfully connected.
 		/// </summary>
@@ -55,15 +56,15 @@ namespace Nularc.Server
 		/// <summary>
 		/// A dictionary containing all the connected clients, mapped as IP->ID.
 		/// </summary>
-		public Dictionary<IPEndPoint, int> ConnectedClientsIPToID { get; private set; } = new Dictionary<IPEndPoint, int>();
+		public Dictionary<IPEndPoint, Guid> ConnectedClientsIPToID { get; private set; } = new();
 		/// <summary>
 		/// A dictionary containing all the connected clients, mapped as ID->IP.
 		/// </summary>
-		public Dictionary<int, IPEndPoint> ConnectedClientsIDToIP { get; private set; } = new Dictionary<int, IPEndPoint>();
+		public Dictionary<Guid, IPEndPoint> ConnectedClientsIDToIP { get; private set; } = new();
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
-		public readonly Logger Logger = new("[Nularc (Server)]: ");
+		public readonly ILogger Logger;
 
 		/// <summary>
 		/// Event that is called when a packet gets received and processed.
@@ -74,10 +75,11 @@ namespace Nularc.Server
 		/// <summary>
 		/// Initialises the server.
 		/// </summary>
-		public Server()
+		public Server(ILoggerFactory loggerFactory)
 		{
-			PacketReceived += OnPacketReceived;
+			Logger = loggerFactory.CreateLogger("Nularc.Server");
 
+			PacketReceived += OnPacketReceived;
 			Listen((int)DefaultPacketTypes.Disconnect, OnDisconnect);
 		}
 
@@ -91,7 +93,7 @@ namespace Nularc.Server
 			IPEndPoint = (IPEndPoint)UdpClient.Client.LocalEndPoint;
 
 			HasStarted = true;
-			Logger.LogMessage(Logger.LogLevel.Info, $"Server started successfully on {IPEndPoint}.");
+			Logger.LogInformation("Server started successfully on {IPEndPoint}.", IPEndPoint);
 		}
 
 		/// <summary>
@@ -103,7 +105,7 @@ namespace Nularc.Server
 			{
 				if (IsStopping)
 				{
-					Logger.LogMessage(Logger.LogLevel.Warning, $"Failed stopping the server: the server is already trying to stop.");
+					Logger.LogWarning("Failed stopping the server: the server is already trying to stop.");
 					return;
 				}
 
@@ -115,16 +117,16 @@ namespace Nularc.Server
 
 				HasStarted = false;
 				IsStopping = false;
-				Logger.LogMessage(Logger.LogLevel.Info, $"Server stopped successfully.");
+				Logger.LogInformation($"Server stopped successfully.");
 			}
 			catch (SocketException e)
 			{
-				Logger.LogMessage(Logger.LogLevel.Error, $"Failed stopping the server: {e}");
+				Logger.LogError("Failed stopping the server: {e}", e);
 			}
 		}
 
 		/// <summary>
-		/// Should be ran every frame, put this in your app's main loop.
+		/// Should run every tick, put this in your app's (framerate independent) main loop.
 		/// </summary>
 		public void Tick()
 		{
@@ -174,7 +176,7 @@ namespace Nularc.Server
 		/// <param name="packet">The packet to send.</param>
 		/// <param name="clientID">The client that the packet should be sent to.</param>
 		/// <returns></returns>
-		public void SendPacket(Packet packet, int clientID)
+		public void SendPacket(Packet packet, Guid clientID)
 		{
 			// Get data from the packet
 			byte[] packetData = packet.ReturnData();
@@ -208,23 +210,6 @@ namespace Nularc.Server
 					// Create new packet object from the received packet data
 					using Packet packet = new(packetData);
 
-					// Check if the packet is a user defined packet, and if so, contains a header and data
-					if (packet.Type >= 0)
-					{
-						if (packetData.Length <= 0)
-						{
-							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header and data missing).");
-						}
-						else if (packetData.Length < Packet.HeaderLength)
-						{
-							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (header incomplete and data missing).");
-						}
-						else if (packetData.Length == Packet.HeaderLength)
-						{
-							Logger.LogMessage(Logger.LogLevel.Warning, $"Received an empty packet of type {packet.Type} (data missing).");
-						}
-					}
-
 					// Check if the client that the packet was sent from is connected to the server
 					if (packet.Type == (int)DefaultPacketTypes.Connect && !ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
 					{
@@ -233,23 +218,29 @@ namespace Nularc.Server
 					}
 					else if (packet.Type != (int)DefaultPacketTypes.Connect && !ConnectedClientsIPToID.ContainsKey(remoteIPEndPoint))
 					{
-						Logger.LogMessage(Logger.LogLevel.Warning, $"Client {remoteIPEndPoint} tried to send a packet, but isn't connected to the server.");
+						Logger.LogWarning("Client {remoteIPEndPoint} tried to send a packet, but isn't connected to the server.", remoteIPEndPoint);
 					}
 					else
 					{
 						// Invoke packet received event
-						int clientID = ConnectedClientsIPToID[remoteIPEndPoint];
+						Guid clientID = ConnectedClientsIPToID[remoteIPEndPoint];
 						PacketReceived?.Invoke(packet, remoteIPEndPoint, clientID);
 					}
 				}
-				catch (Exception e)
+				catch (InvalidPacketHeaderException)
 				{
-					Logger.LogMessage(Logger.LogLevel.Error, $"Failed receiving a packet from a client: {e}");
+					Logger.LogError("Received a packet with an invalid header.");
+					throw;
+				}
+				catch (Exception)
+				{
+					Logger.LogError("Failed receiving a packet from the server due to an exception.");
+					throw;
 				}
 			}
 		}
 
-		private void OnPacketReceived(Packet packet, IPEndPoint ipEndPoint, int clientID)
+		private void OnPacketReceived(Packet packet, IPEndPoint ipEndPoint, Guid clientID)
 		{
 			if (PacketListeners.ContainsKey(packet.Type))
 			{
@@ -265,13 +256,13 @@ namespace Nularc.Server
 			// Check if client is already connected
 			if (ConnectedClientsIDToIP.ContainsValue(ipEndPoint))
 			{
-				int alreadyConnectedClientID = ConnectedClientsIPToID[ipEndPoint];
-				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {alreadyConnectedClientID} ({ipEndPoint}) failed to connect: already connected.");
+				Guid alreadyConnectedClientID = ConnectedClientsIPToID[ipEndPoint];
+				Logger.LogWarning("Client {alreadyConnectedClientID} ({ipEndPoint}) failed to connect: already connected.", alreadyConnectedClientID, ipEndPoint);
 				return;
 			}
 
 			// Accept the client's connection request
-			int clientID = ConnectedClientsIDToIP.Count;
+			Guid clientID = Guid.NewGuid();
 			ConnectedClientsIDToIP.Add(clientID, ipEndPoint);
 			ConnectedClientsIPToID.Add(ipEndPoint, clientID);
 
@@ -279,22 +270,22 @@ namespace Nularc.Server
 			using (Packet newPacket = new((int)DefaultPacketTypes.Connect))
 			{
 				// Write the client ID to the packet
-				newPacket.Writer.Write(clientID);
+				newPacket.Writer.Write(clientID.ToByteArray());
 
 				SendPacket(newPacket, clientID);
 			}
 
 			ClientConnected.Invoke(ipEndPoint, clientID);
-			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully connected.");
+			Logger.LogInformation("Client {clientID} ({IPEndPoint}) successfully connected.", clientID, IPEndPoint);
 		}
 
-		private void OnDisconnect(Packet packet, IPEndPoint ipEndPoint, int clientID)
+		private void OnDisconnect(Packet packet, IPEndPoint ipEndPoint, Guid clientID)
 		{
 			// TODO: Improve checking of connected clients
 			// Check if client is already disconnected
 			if (!ConnectedClientsIDToIP.ContainsValue(IPEndPoint))
 			{
-				Logger.LogMessage(Logger.LogLevel.Warning, $"Client {clientID} ({IPEndPoint}) failed to disconnect: already disconnected.");
+				Logger.LogWarning("Client {clientID} ({IPEndPoint}) failed to disconnect: already disconnected.", clientID, IPEndPoint);
 				return;
 			}
 
@@ -303,7 +294,7 @@ namespace Nularc.Server
 			ConnectedClientsIPToID.Remove(IPEndPoint);
 
 			ClientDisconnected.Invoke(ipEndPoint, clientID);
-			Logger.LogMessage(Logger.LogLevel.Info, $"Client {clientID} ({IPEndPoint}) successfully disconnected.");
+			Logger.LogInformation("Client {clientID} ({IPEndPoint}) successfully disconnected.", clientID, IPEndPoint);
 		}
 	}
 }
