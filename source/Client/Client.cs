@@ -22,7 +22,7 @@ namespace Nularc.Client
 		/// </summary>
 		/// <param name="ipEndPoint">The IP endpoint of the client that has successfully (dis)connected.</param>
 		/// <param name="clientID">The ID of the client that has successfully (dis)connected.</param>
-		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int clientID);
+		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, Guid clientID);
 		/// <summary>
 		/// Event that gets called when a client has successfully connected.
 		/// </summary>
@@ -56,9 +56,9 @@ namespace Nularc.Client
 		/// </summary>
 		public int MaxPacketsReceivedPerTick = 5;
 		/// <summary>
-		/// The ID of the client, used to identify the client.
+		/// The ID of the client, used to identify the client. Set to <see cref="Guid.Empty"/> when the client is not connected to a server.
 		/// </summary>
-		public int ClientID { get; private set; }
+		public Guid ClientID { get; private set; } = Guid.Empty;
 		/// <summary>
 		/// The client's logger.
 		/// </summary>
@@ -299,7 +299,7 @@ namespace Nularc.Client
 		private void OnConnected(Packet packet)
 		{
 			IsConnected = true;
-			ClientID = packet.Reader.ReadInt32();
+			ClientID = new Guid(packet.Reader.ReadBytes(16));
 
 			Connected.Invoke(ServerIPEndPoint, ClientID);
 			Logger.LogInformation("Successfully connected to server {ServerIPEndPoint}, received client ID {ClientID}.", ServerIPEndPoint, ClientID);
@@ -308,11 +308,11 @@ namespace Nularc.Client
 		private void OnDisconnected(Packet packet)
 		{
 			IPEndPoint serverIPEndPoint = ServerIPEndPoint;
-			int clientID = ClientID;
+			Guid clientID = ClientID;
 
 			IsConnected = false;
 			ServerIPEndPoint = null;
-			ClientID = -1;
+			ClientID = Guid.Empty;
 
 			Disconnected.Invoke(serverIPEndPoint, clientID);
 			Logger.LogInformation("Successfully disconnected from server {serverIPEndPoint}.", serverIPEndPoint);

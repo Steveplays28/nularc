@@ -18,13 +18,13 @@ namespace Nularc.Server
 		/// <param name="packet">The packet that was received.</param>
 		/// <param name="ipEndPoint">The IP endpoint of the client the packet was received from.</param>
 		/// <param name="clientID">The ID of the client the packet was received from.</param>
-		public delegate void PacketReceivedEventHandler(Packet packet, IPEndPoint ipEndPoint, int clientID);
+		public delegate void PacketReceivedEventHandler(Packet packet, IPEndPoint ipEndPoint, Guid clientID);
 		/// <summary>
 		/// Event handler for when a client has successfully (dis)connected.
 		/// </summary>
 		/// <param name="ipEndPoint">The IP endpoint of the client that has successfully (dis)connected.</param>
 		/// <param name="clientID">The ID of the client that has successfully (dis)connected.</param>
-		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, int clientID);
+		public delegate void ConnectedEventHandler(IPEndPoint ipEndPoint, Guid clientID);
 		/// <summary>
 		/// Event that gets called when a client has successfully connected.
 		/// </summary>
@@ -56,11 +56,11 @@ namespace Nularc.Server
 		/// <summary>
 		/// A dictionary containing all the connected clients, mapped as IP->ID.
 		/// </summary>
-		public Dictionary<IPEndPoint, int> ConnectedClientsIPToID { get; private set; } = new Dictionary<IPEndPoint, int>();
+		public Dictionary<IPEndPoint, Guid> ConnectedClientsIPToID { get; private set; } = new();
 		/// <summary>
 		/// A dictionary containing all the connected clients, mapped as ID->IP.
 		/// </summary>
-		public Dictionary<int, IPEndPoint> ConnectedClientsIDToIP { get; private set; } = new Dictionary<int, IPEndPoint>();
+		public Dictionary<Guid, IPEndPoint> ConnectedClientsIDToIP { get; private set; } = new();
 		/// <summary>
 		/// The server's logger.
 		/// </summary>
@@ -176,7 +176,7 @@ namespace Nularc.Server
 		/// <param name="packet">The packet to send.</param>
 		/// <param name="clientID">The client that the packet should be sent to.</param>
 		/// <returns></returns>
-		public void SendPacket(Packet packet, int clientID)
+		public void SendPacket(Packet packet, Guid clientID)
 		{
 			// Get data from the packet
 			byte[] packetData = packet.ReturnData();
@@ -223,7 +223,7 @@ namespace Nularc.Server
 					else
 					{
 						// Invoke packet received event
-						int clientID = ConnectedClientsIPToID[remoteIPEndPoint];
+						Guid clientID = ConnectedClientsIPToID[remoteIPEndPoint];
 						PacketReceived?.Invoke(packet, remoteIPEndPoint, clientID);
 					}
 				}
@@ -240,7 +240,7 @@ namespace Nularc.Server
 			}
 		}
 
-		private void OnPacketReceived(Packet packet, IPEndPoint ipEndPoint, int clientID)
+		private void OnPacketReceived(Packet packet, IPEndPoint ipEndPoint, Guid clientID)
 		{
 			if (PacketListeners.ContainsKey(packet.Type))
 			{
@@ -256,13 +256,13 @@ namespace Nularc.Server
 			// Check if client is already connected
 			if (ConnectedClientsIDToIP.ContainsValue(ipEndPoint))
 			{
-				int alreadyConnectedClientID = ConnectedClientsIPToID[ipEndPoint];
+				Guid alreadyConnectedClientID = ConnectedClientsIPToID[ipEndPoint];
 				Logger.LogWarning("Client {alreadyConnectedClientID} ({ipEndPoint}) failed to connect: already connected.", alreadyConnectedClientID, ipEndPoint);
 				return;
 			}
 
 			// Accept the client's connection request
-			int clientID = ConnectedClientsIDToIP.Count;
+			Guid clientID = Guid.NewGuid();
 			ConnectedClientsIDToIP.Add(clientID, ipEndPoint);
 			ConnectedClientsIPToID.Add(ipEndPoint, clientID);
 
@@ -270,7 +270,7 @@ namespace Nularc.Server
 			using (Packet newPacket = new((int)DefaultPacketTypes.Connect))
 			{
 				// Write the client ID to the packet
-				newPacket.Writer.Write(clientID);
+				newPacket.Writer.Write(clientID.ToByteArray());
 
 				SendPacket(newPacket, clientID);
 			}
@@ -279,7 +279,7 @@ namespace Nularc.Server
 			Logger.LogInformation("Client {clientID} ({IPEndPoint}) successfully connected.", clientID, IPEndPoint);
 		}
 
-		private void OnDisconnect(Packet packet, IPEndPoint ipEndPoint, int clientID)
+		private void OnDisconnect(Packet packet, IPEndPoint ipEndPoint, Guid clientID)
 		{
 			// TODO: Improve checking of connected clients
 			// Check if client is already disconnected
