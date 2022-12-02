@@ -6,6 +6,9 @@
 <!-- markdownlint-disable-next-line no-duplicate-header -->
 ### **Godot 4**
 
+Basic server and client setup for Godot 4.  
+Does not include logging. For info on how to set up logging, see [logging](logging.md).
+
 ```cs
 using System.Linq;
 using Godot;
@@ -39,45 +42,22 @@ public partial class NetworkManager : Node
 
  public override void _PhysicsProcess(double delta)
  {
-  if (Server != null)
-  {
-   Server.Tick();
-  }
-  if (Client != null)
-  {
-   Client.Tick();
-  }
+  Server?.Tick();
+  Client?.Tick();
  }
 
  public void StartServer()
  {
   Server = new();
-  Server.Logger.Log += OnLog;
   Server.Start(Port);
  }
 
  public void StartClient()
  {
   Client = new();
-  Client.Logger.Log += OnLog;
   Client.Start();
-  Client.Connect(IP, Port);
- }
 
- private void OnLog(Logger.LogLevel logLevel, string logMessage)
- {
-  if (logLevel == Logger.LogLevel.Info)
-  {
-   GD.Print(logMessage);
-  }
-  else if (logLevel == Logger.LogLevel.Warning)
-  {
-   GD.PushWarning(logMessage);
-  }
-  else if (logLevel == Logger.LogLevel.Error)
-  {
-   GD.PushError(logMessage);
-  }
+  Client.Connect(IP, Port);
  }
 }
 ```
