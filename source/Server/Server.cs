@@ -275,7 +275,7 @@ namespace Nularc.Server
 				SendPacket(newPacket, clientID);
 			}
 
-			ClientConnected.Invoke(ipEndPoint, clientID);
+			ClientConnected?.Invoke(ipEndPoint, clientID);
 			Logger.LogInformation("Client {clientID} ({IPEndPoint}) successfully connected.", clientID, IPEndPoint);
 		}
 
@@ -293,7 +293,7 @@ namespace Nularc.Server
 			ConnectedClientsIDToIP.Remove(ConnectedClientsIPToID[IPEndPoint]);
 			ConnectedClientsIPToID.Remove(IPEndPoint);
 
-			ClientDisconnected.Invoke(ipEndPoint, clientID);
+			ClientDisconnected?.Invoke(ipEndPoint, clientID);
 			Logger.LogInformation("Client {clientID} ({IPEndPoint}) successfully disconnected.", clientID, IPEndPoint);
 		}
 	}
