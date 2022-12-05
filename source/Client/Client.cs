@@ -301,7 +301,7 @@ namespace Nularc.Client
 			IsConnected = true;
 			ClientID = new Guid(packet.Reader.ReadBytes(16));
 
-			Connected.Invoke(ServerIPEndPoint, ClientID);
+			Connected?.Invoke(ServerIPEndPoint, ClientID);
 			Logger.LogInformation("Successfully connected to server {ServerIPEndPoint}, received client ID {ClientID}.", ServerIPEndPoint, ClientID);
 		}
 
@@ -314,7 +314,7 @@ namespace Nularc.Client
 			ServerIPEndPoint = null;
 			ClientID = Guid.Empty;
 
-			Disconnected.Invoke(serverIPEndPoint, clientID);
+			Disconnected?.Invoke(serverIPEndPoint, clientID);
 			Logger.LogInformation("Successfully disconnected from server {serverIPEndPoint}.", serverIPEndPoint);
 		}
 	}
